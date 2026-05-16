@@ -129,8 +129,9 @@ export default function AppNav() {
     router.refresh()
   }
 
-  return (
+ return (
     <>
+      <DesktopSidebar user={user} onLogout={handleLogout} />
       <MobileTopBar user={user} />
       <BottomTabBar />
     </>
