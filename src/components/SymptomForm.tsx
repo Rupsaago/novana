@@ -1,0 +1,379 @@
+// src/components/SymptomForm.tsx  (PHASE 3 VERSION — replaces Phase 2 version)
+// ═══════════════════════════════════════════════════════════════════════════
+// WHAT CHANGED FROM PHASE 2:
+//   - handleSubmit now calls POST /api/symptoms (real database save)
+//   - Added loading state from existing today's log (GET /api/symptoms?days=1)
+//   - Shows "already logged today" state if an entry exists
+//   - All other UI is identical to Phase 2
+// ═══════════════════════════════════════════════════════════════════════════
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import type { CycleStatus } from '@/types/database'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface SymptomData {
+  mood:          number
+  fatigue:       number
+  sleep_hours:   number
+  stress:        number
+  acne:          number
+  cramps:        number
+  exercise_mins: number
+  cycle_status:  CycleStatus
+  notes:         string
+}
+
+const DEFAULTS: SymptomData = {
+  mood:          5,
+  fatigue:       5,
+  sleep_hours:   7,
+  stress:        5,
+  acne:          3,
+  cramps:        3,
+  exercise_mins: 30,
+  cycle_status:  'none',
+  notes:         '',
+}
+
+// ── Slider config ─────────────────────────────────────────────────────────────
+const SLIDERS = [
+  { key: 'mood'          as const, label: 'Mood',         emoji: '🌤', desc: 'How are you feeling emotionally?',             min: 1,  max: 10,  step: 1,   unit: '/10', labelLow: 'Very low',    labelHigh: 'Excellent',      getColor: (v: number) => v >= 7 ? 'accent-nova-purple' : v >= 4 ? 'accent-nova-peach' : 'accent-nova-rose' },
+  { key: 'fatigue'       as const, label: 'Fatigue',      emoji: '💤', desc: 'How tired or drained do you feel?',            min: 1,  max: 10,  step: 1,   unit: '/10', labelLow: 'Energised',   labelHigh: 'Exhausted',      getColor: (v: number) => v >= 7 ? 'accent-nova-rose'  : v >= 4 ? 'accent-nova-peach' : 'accent-nova-sky'  },
+  { key: 'sleep_hours'   as const, label: 'Sleep',        emoji: '🌙', desc: 'How many hours did you sleep?',                min: 0,  max: 12,  step: 0.5, unit: 'hrs', labelLow: '0 hours',     labelHigh: '12 hours',       getColor: (v: number) => v >= 7 ? 'accent-nova-sky'   : v >= 5 ? 'accent-nova-peach' : 'accent-nova-rose'  },
+  { key: 'stress'        as const, label: 'Stress',       emoji: '🌀', desc: 'How stressed or overwhelmed do you feel?',     min: 1,  max: 10,  step: 1,   unit: '/10', labelLow: 'Calm',        labelHigh: 'Very stressed',  getColor: (v: number) => v >= 7 ? 'accent-nova-rose'  : v >= 4 ? 'accent-nova-peach' : 'accent-nova-sky'  },
+  { key: 'acne'          as const, label: 'Acne / Skin',  emoji: '🌸', desc: 'Rate any skin breakouts today.',               min: 1,  max: 10,  step: 1,   unit: '/10', labelLow: 'Clear skin',  labelHigh: 'Severe breakout',getColor: (v: number) => v >= 7 ? 'accent-nova-rose'  : v >= 4 ? 'accent-nova-peach' : 'accent-nova-purple'},
+  { key: 'cramps'        as const, label: 'Cramps / Pain',emoji: '⚡', desc: 'Any pelvic or body cramps?',                   min: 1,  max: 10,  step: 1,   unit: '/10', labelLow: 'No pain',     labelHigh: 'Severe pain',    getColor: (v: number) => v >= 7 ? 'accent-nova-rose'  : v >= 4 ? 'accent-nova-peach' : 'accent-nova-sky'  },
+  { key: 'exercise_mins' as const, label: 'Exercise',     emoji: '🏃‍♀️', desc: 'Minutes of movement today.',                  min: 0,  max: 120, step: 5,   unit: 'min', labelLow: 'None',        labelHigh: '2 hours',        getColor: (v: number) => v >= 45 ? 'accent-nova-purple': v >= 15 ? 'accent-nova-peach' : 'accent-nova-sky' },
+]
+
+const CYCLE_OPTIONS: { value: CycleStatus; label: string; emoji: string }[] = [
+  { value: 'none',     label: 'None',     emoji: '○' },
+  { value: 'spotting', label: 'Spotting', emoji: '·' },
+  { value: 'light',    label: 'Light',    emoji: '◔' },
+  { value: 'moderate', label: 'Moderate', emoji: '◑' },
+  { value: 'heavy',    label: 'Heavy',    emoji: '●' },
+]
+
+// ── Main component ─────────────────────────────────────────────────────────────
+export default function SymptomForm() {
+  const [values, setValues]         = useState<SymptomData>(DEFAULTS)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted]   = useState(false)
+  const [alreadyLogged, setAlreadyLogged] = useState(false)
+  const [loadingExisting, setLoadingExisting] = useState(true)
+  const [error, setError]           = useState<string | null>(null)
+
+  // ── On mount: check if user already logged today ──────────────────────────
+  // We fetch the last 1 day of symptoms. If there's a result for today, pre-fill the form.
+  useEffect(() => {
+    async function loadTodayEntry() {
+      try {
+        const res  = await fetch('/api/symptoms?days=1')
+        const json = await res.json()
+
+        if (json.data && json.data.length > 0) {
+          const today     = new Date().toISOString().split('T')[0]
+          const todayRow  = json.data.find(
+            (row: { logged_at: string }) => row.logged_at === today
+          )
+
+          if (todayRow) {
+            // Pre-fill the form with today's existing values
+            setValues({
+              mood:          todayRow.mood,
+              fatigue:       todayRow.fatigue,
+              sleep_hours:   todayRow.sleep_hours,
+              stress:        todayRow.stress,
+              acne:          todayRow.acne,
+              cramps:        todayRow.cramps,
+              exercise_mins: todayRow.exercise_mins,
+              cycle_status:  todayRow.cycle_status,
+              notes:         todayRow.notes ?? '',
+            })
+            setAlreadyLogged(true)
+          }
+        }
+      } catch (err) {
+        // Non-fatal — form just starts with defaults
+        console.warn('Could not load existing entry:', err)
+      } finally {
+        setLoadingExisting(false)
+      }
+    }
+
+    loadTodayEntry()
+  }, [])
+
+  function updateField<K extends keyof SymptomData>(key: K, value: SymptomData[K]) {
+    setValues((prev) => ({ ...prev, [key]: value }))
+    setSubmitted(false)
+    setAlreadyLogged(false)  // let them re-save edits
+  }
+
+  // ── Submit: POST to /api/symptoms ─────────────────────────────────────────
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/symptoms', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(values),
+      })
+
+      const json = await response.json()
+
+      if (!response.ok) {
+        // Server returned an error (4xx or 5xx)
+        throw new Error(json.error ?? 'Unknown error')
+      }
+
+      setSubmitted(true)
+      setAlreadyLogged(true)
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong.'
+      setError(message)
+      console.error('[SymptomForm submit]', err)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ── Loading skeleton ───────────────────────────────────────────────────────
+  if (loadingExisting) {
+    return (
+      <div className="card space-y-4 animate-pulse">
+        <div className="h-6 bg-nova-border/50 rounded-xl w-40" />
+        {[1,2,3,4].map((i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-4 bg-nova-border/40 rounded-lg w-24" />
+            <div className="h-2 bg-nova-border/30 rounded-full" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* ── Already logged banner ─────────────────────────────────────────── */}
+      {alreadyLogged && !submitted && (
+        <div className="flex items-start gap-3 bg-nova-sky/15 border border-nova-sky/30
+                        rounded-2xl px-5 py-4">
+          <span className="text-lg mt-0.5">📋</span>
+          <div>
+            <p className="text-sm font-medium text-nova-text">
+              You've already logged today
+            </p>
+            <p className="text-xs text-nova-muted mt-0.5">
+              Your existing values are shown. Edit and save again to update them.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Success banner ────────────────────────────────────────────────── */}
+      {submitted && (
+        <div className="flex items-start gap-3 bg-nova-purple/10 border border-nova-purple/25
+                        rounded-2xl px-5 py-4">
+          <span className="text-lg mt-0.5">🌅</span>
+          <div>
+            <p className="text-sm font-medium text-nova-text">Saved to your account!</p>
+            <p className="text-xs text-nova-muted mt-0.5">
+              Your check-in is saved. See it in Analytics after a few days.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Error banner ──────────────────────────────────────────────────── */}
+      {error && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200
+                        rounded-2xl px-5 py-4">
+          <span className="text-lg mt-0.5">⚠️</span>
+          <div>
+            <p className="text-sm font-medium text-red-700">Save failed</p>
+            <p className="text-xs text-red-500 mt-0.5">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sliders ───────────────────────────────────────────────────────── */}
+      <div className="card space-y-8">
+        <div className="flex items-center gap-2">
+          <h3 className="font-display text-xl text-nova-text">Symptom sliders</h3>
+          <span className="pill">7 readings</span>
+        </div>
+
+        {SLIDERS.map((slider) => {
+          const value = values[slider.key] as number
+
+          return (
+            <div key={slider.key} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{slider.emoji}</span>
+                  <div>
+                    <label htmlFor={slider.key}
+                           className="block text-sm font-medium text-nova-text">
+                      {slider.label}
+                    </label>
+                    <p className="text-xs text-nova-muted">{slider.desc}</p>
+                  </div>
+                </div>
+                <span className="text-lg font-display text-nova-purple min-w-[52px]
+                                 text-right tabular-nums">
+                  {slider.key === 'sleep_hours'
+                    ? `${value}h`
+                    : slider.key === 'exercise_mins'
+                    ? `${value}m`
+                    : `${value}/10`}
+                </span>
+              </div>
+
+              <input
+                id={slider.key}
+                type="range"
+                min={slider.min}
+                max={slider.max}
+                step={slider.step}
+                value={value}
+                onChange={(e) =>
+                  updateField(slider.key, parseFloat(e.target.value) as never)
+                }
+                className={`symptom-slider ${slider.getColor(value)}`}
+                aria-label={`${slider.label}: ${value}${slider.unit}`}
+              />
+
+              <div className="flex justify-between">
+                <span className="text-xs text-nova-muted/60">{slider.labelLow}</span>
+                <span className="text-xs text-nova-muted/60">{slider.labelHigh}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Cycle status ──────────────────────────────────────────────────── */}
+      <div className="card space-y-4">
+        <div>
+          <h3 className="font-display text-xl text-nova-text mb-1">Cycle status</h3>
+          <p className="text-xs text-nova-muted">
+            Helps the AI spot patterns between cycle phase and other symptoms.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {CYCLE_OPTIONS.map((opt) => {
+            const isSelected = values.cycle_status === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => updateField('cycle_status', opt.value)}
+                className={`flex flex-col items-center gap-1.5 px-3 py-4 rounded-2xl
+                           border text-sm transition-all duration-200 font-medium
+                           ${isSelected
+                             ? 'bg-nova-rose/15 border-nova-rose/40 text-nova-rose shadow-nova-sm'
+                             : 'bg-nova-bg border-nova-border text-nova-muted hover:bg-nova-card'}`}
+                aria-pressed={isSelected}
+              >
+                <span className="text-xl">{opt.emoji}</span>
+                <span className="text-xs text-center leading-tight">{opt.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Notes ─────────────────────────────────────────────────────────── */}
+      <div className="card space-y-3">
+        <div>
+          <h3 className="font-display text-xl text-nova-text mb-1">
+            Notes{' '}
+            <span className="text-nova-muted text-base font-sans font-normal">(optional)</span>
+          </h3>
+          <p className="text-xs text-nova-muted">
+            Food, events, medications, mood context. Helps the AI give better insights.
+          </p>
+        </div>
+        <textarea
+          id="notes"
+          value={values.notes}
+          onChange={(e) => updateField('notes', e.target.value)}
+          rows={3}
+          placeholder="e.g. Had a stressful meeting, skipped lunch, headache around 3pm..."
+          className="form-input resize-none"
+          maxLength={500}
+        />
+        <p className="text-right text-xs text-nova-muted/50">{values.notes.length}/500</p>
+      </div>
+
+      {/* ── Summary preview ───────────────────────────────────────────────── */}
+      <div className="bg-nova-card/60 border border-nova-border/40 rounded-3xl p-5">
+        <p className="text-xs font-medium text-nova-muted uppercase tracking-widest mb-4">
+          Summary preview
+        </p>
+        <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+          {[
+            { label: 'Mood',     val: `${values.mood}/10`,           color: 'text-nova-purple' },
+            { label: 'Fatigue',  val: `${values.fatigue}/10`,        color: 'text-nova-peach'  },
+            { label: 'Sleep',    val: `${values.sleep_hours}h`,      color: 'text-nova-sky'    },
+            { label: 'Stress',   val: `${values.stress}/10`,         color: 'text-nova-rose'   },
+            { label: 'Acne',     val: `${values.acne}/10`,           color: 'text-nova-peach'  },
+            { label: 'Cramps',   val: `${values.cramps}/10`,         color: 'text-nova-rose'   },
+            { label: 'Exercise', val: `${values.exercise_mins}m`,    color: 'text-nova-purple' },
+            { label: 'Cycle',    val: values.cycle_status,           color: 'text-nova-rose'   },
+          ].map((item) => (
+            <div key={item.label} className="flex flex-col items-center gap-1 text-center">
+              <span className={`text-base font-display ${item.color}`}>{item.val}</span>
+              <span className="text-xs text-nova-muted/70">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Submit ────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start">
+        <button
+          type="submit"
+          disabled={submitting}
+          className={`btn-primary text-base px-8 py-4 w-full sm:w-auto
+                     ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+        >
+          {submitting ? (
+            <span className="flex items-center gap-2">
+              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10"
+                        stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              Saving...
+            </span>
+          ) : submitted ? (
+            '✓ Saved!'
+          ) : alreadyLogged ? (
+            'Update today\'s log →'
+          ) : (
+            'Save today\'s log →'
+          )}
+        </button>
+
+        {!submitted && (
+          <button type="button" onClick={() => setValues(DEFAULTS)} className="btn-ghost text-sm">
+            Reset
+          </button>
+        )}
+      </div>
+
+      <p className="text-xs text-nova-muted/50 leading-relaxed">
+        ⚠ Not medical advice. Novana provides pattern insights only.
+      </p>
+    </form>
+  )
+}

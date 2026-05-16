@@ -1,27 +1,132 @@
+/* src/app/globals.css */
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* Tailwind base directives — these MUST be here or Tailwind won't work.      */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* Custom base styles                                                          */
+/* ─────────────────────────────────────────────────────────────────────────── */
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --nova-bg:     #F7F2ED;
+    --nova-card:   #EFE6DF;
+    --nova-purple: #7B6FA8;
+    --nova-peach:  #E8A98B;
+    --nova-rose:   #D28CA7;
+    --nova-sky:    #8FA7C6;
+    --nova-text:   #2F2A28;
+    --nova-muted:  #6F6A66;
+    --nova-border: #DDD4CA;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Base heading styles */
+  h1, h2, h3, h4 {
+    font-family: var(--font-fraunces), serif;
+    font-weight: 400;
+  }
+
+  /* Focus ring — warm purple instead of the default blue */
+  *:focus-visible {
+    outline: 2px solid #7B6FA8;
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* ── Button variants ─────────────────────────────────────────────────────── */
+
+  /* Primary button — filled purple */
+  .btn-primary {
+    @apply bg-nova-purple text-white font-medium px-6 py-3 rounded-2xl
+           shadow-nova-sm hover:bg-nova-purple-dark active:scale-95
+           transition-all duration-200 text-sm tracking-wide;
+  }
+
+  /* Secondary button — outline */
+  .btn-secondary {
+    @apply bg-transparent border border-nova-purple text-nova-purple font-medium
+           px-6 py-3 rounded-2xl hover:bg-nova-purple hover:text-white
+           active:scale-95 transition-all duration-200 text-sm;
+  }
+
+  /* Ghost button — no border */
+  .btn-ghost {
+    @apply bg-transparent text-nova-muted font-medium px-4 py-2 rounded-xl
+           hover:bg-nova-card transition-all duration-200 text-sm;
+  }
+
+  /* ── Card ────────────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-nova-white rounded-3xl shadow-nova border border-nova-border/40 p-6;
+  }
+
+  .card-sm {
+    @apply bg-nova-white rounded-2xl shadow-nova-sm border border-nova-border/40 p-4;
+  }
+
+  /* ── Form elements ───────────────────────────────────────────────────────── */
+  .form-label {
+    @apply block text-sm font-medium text-nova-muted mb-2;
+  }
+
+  .form-input {
+    @apply w-full bg-nova-bg border border-nova-border rounded-xl px-4 py-3
+           text-nova-text text-sm placeholder:text-nova-muted/60
+           focus:outline-none focus:border-nova-purple focus:ring-2
+           focus:ring-nova-purple/10 transition-all duration-200;
+  }
+
+  .form-select {
+    @apply w-full bg-nova-bg border border-nova-border rounded-xl px-4 py-3
+           text-nova-text text-sm
+           focus:outline-none focus:border-nova-purple focus:ring-2
+           focus:ring-nova-purple/10 transition-all duration-200 appearance-none;
+  }
+
+  /* ── Symptom slider track ─────────────────────────────────────────────────── */
+  .symptom-slider {
+    @apply w-full h-2 rounded-full appearance-none cursor-pointer
+           bg-nova-border accent-nova-purple;
+  }
+
+  /* ── Nav link ────────────────────────────────────────────────────────────── */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-nova-muted
+           text-sm font-medium hover:bg-nova-card hover:text-nova-text
+           transition-all duration-200;
+  }
+
+  .nav-link-active {
+    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-nova-purple
+           text-sm font-medium bg-nova-purple/10;
+  }
+
+  /* ── Gradient text ────────────────────────────────────────────────────────── */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-nova-gradient;
+  }
+
+  /* ── Pill / badge ─────────────────────────────────────────────────────────── */
+  .pill {
+    @apply inline-flex items-center gap-1 text-xs font-medium px-3 py-1
+           rounded-full bg-nova-purple/10 text-nova-purple;
+  }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  /* Staggered opacity-0 for animation start states */
+  .opacity-0-start {
+    opacity: 0;
   }
 }

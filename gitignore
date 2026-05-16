@@ -1,0 +1,27 @@
+# .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+# Files and folders listed here are HIDDEN from GitHub.
+# Git will never upload these — even if you run git add .
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Secret keys — CRITICAL to ignore ─────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ── Dependencies (reinstalled with npm install) ────────────────────────────────
+node_modules/
+
+# ── Next.js build output ──────────────────────────────────────────────────────
+.next/
+out/
+
+# ── OS junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editor settings ───────────────────────────────────────────────────────────
+.vscode/settings.json
+*.log
