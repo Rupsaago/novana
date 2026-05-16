@@ -42,8 +42,8 @@ function DesktopSidebar({
     .slice(0, 2)
 
   return (
-    <aside className="hidden md:flex flex-col h-full bg-nova-white border-r
-                      border-nova-border/40 w-64 px-4 py-6 flex-shrink-0">
+    <aside className="hidden lg:flex flex-col h-full bg-nova-white border-r
+                  border-nova-border/40 w-64 px-4 py-6 flex-shrink-0">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2.5 px-2 mb-8 group">
         <span className="w-8 h-8 rounded-xl bg-nova-gradient flex items-center
@@ -138,8 +138,8 @@ function MobileTopBar({ user }: { user: User | null }) {
   const pageTitle   = TABS.find((t) => t.href === pathname)?.label ?? 'Novana'
 
   return (
-    <header className="md:hidden flex items-center justify-between
-                       bg-nova-white/80 backdrop-blur-md border-b border-nova-border/40
+    <header className="lg:hidden flex items-center justify-between
+                       bg-nova-white/80 backdrop-blur-lg border-b border-nova-border/40
                        px-5 py-3 sticky top-0 z-30">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2">
@@ -170,8 +170,8 @@ function BottomTabBar() {
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40
-                    bg-nova-white/90 backdrop-blur-md
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40
+                    bg-nova-white/90 backdrop-blur-lg
                     border-t border-nova-border/40
                     flex items-stretch
                     pb-safe">
