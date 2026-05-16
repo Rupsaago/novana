@@ -1,9 +1,9 @@
-// src/app/dashboard/layout.tsx  (FIXED — uses shared MobileNav)
+// src/app/insights/layout.tsx  (NEW)
 'use client'
 
 import MobileNav from '@/components/MobileNav'
 
-export default function DashboardLayout({
+export default function InsightsLayout({
   children,
 }: {
   children: React.ReactNode

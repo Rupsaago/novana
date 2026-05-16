@@ -1,9 +1,9 @@
-// src/app/dashboard/layout.tsx  (FIXED — uses shared MobileNav)
+// src/app/analytics/layout.tsx  (NEW — adds nav to analytics page)
 'use client'
 
 import MobileNav from '@/components/MobileNav'
 
-export default function DashboardLayout({
+export default function AnalyticsLayout({
   children,
 }: {
   children: React.ReactNode
