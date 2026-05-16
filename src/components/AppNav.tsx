@@ -131,7 +131,6 @@ export default function AppNav() {
 
   return (
     <>
-      <DesktopSidebar user={user} onLogout={handleLogout} />
       <MobileTopBar user={user} />
       <BottomTabBar />
     </>
