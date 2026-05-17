@@ -130,3 +130,55 @@
     opacity: 0;
   }
 }
+/* Add these styles to the bottom of src/app/globals.css */
+/* ─────────────────────────────────────────────────────── */
+/* Custom slider thumb styling                            */
+/* ─────────────────────────────────────────────────────── */
+
+/* WebKit (Chrome, Safari, Edge) */
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2.5px solid currentColor;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}
+
+input[type='range']::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+
+/* Firefox */
+input[type='range']::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2.5px solid currentColor;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type='range']::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Remove default focus outline on range inputs */
+input[type='range']:focus {
+  outline: none;
+}
+
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(123, 111, 168, 0.3);
+}
