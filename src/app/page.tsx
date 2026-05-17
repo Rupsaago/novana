@@ -50,6 +50,10 @@ function NavBar() {
               className="text-sm text-nova-muted hover:text-nova-text transition-colors">
           About PMOS
         </Link>
+        <Link href="/about"
+              className="text-sm text-nova-muted hover:text-nova-text transition-colors">
+          About
+        </Link>
       </div>
 
       {/* Auth buttons */}
