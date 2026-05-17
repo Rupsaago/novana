@@ -320,6 +320,10 @@ export default function LandingPage() {
             Not medical advice · Private by design · © {new Date().getFullYear()} Novana
           </p>
           <div className="flex items-center gap-6">
+            <Link href="/about"
+                className="text-nova-muted/60 text-xs hover:text-nova-muted transition-colors">
+              About
+            </Link>
             <Link href="/privacy"
                   className="text-nova-muted/60 text-xs hover:text-nova-muted transition-colors">
               Privacy
