@@ -1,7 +1,8 @@
-// src/components/AppNav.tsx  (DESKTOP REDESIGN — matches mockup sidebar)
+// src/components/AppNav.tsx  (FINAL — sparkle logo, beige sidebar, bg image)
 'use client'
 
 import Link                       from 'next/link'
+import Image                      from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect }    from 'react'
 import { createClient }           from '@/lib/supabase'
@@ -15,8 +16,45 @@ const TABS = [
   { href: '/settings',  label: 'Settings',    icon: '⚙️' },
 ]
 
-// ── Desktop sidebar — matches the mockup exactly ──────────────────────────────
-function DesktopSidebar({ user, onLogout }: { user: User | null; onLogout: () => void }) {
+// ── Sparkle logo SVG — matches the brand image ────────────────────────────────
+function NovanaLogo({ size = 32 }: { size?: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      {/* Sparkle icon */}
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+        {/* Main 4-point star */}
+        <path
+          d="M16 4 L17.5 14 L28 16 L17.5 18 L16 28 L14.5 18 L4 16 L14.5 14 Z"
+          fill="url(#sparkleGrad)"
+        />
+        {/* Small top-right star */}
+        <path
+          d="M24 6 L24.7 9.3 L28 10 L24.7 10.7 L24 14 L23.3 10.7 L20 10 L23.3 9.3 Z"
+          fill="url(#sparkleGrad)"
+          opacity="0.7"
+        />
+        {/* Tiny dot */}
+        <circle cx="26" cy="6" r="1.5" fill="#E8A98B" opacity="0.8" />
+        <defs>
+          <linearGradient id="sparkleGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#E8A98B" />
+            <stop offset="100%" stopColor="#D28CA7" />
+          </linearGradient>
+        </defs>
+      </svg>
+      {/* Wordmark */}
+      <span className="font-display text-xl text-nova-purple tracking-tight">
+        novana
+      </span>
+    </div>
+  )
+}
+
+// ── Desktop sidebar ───────────────────────────────────────────────────────────
+function DesktopSidebar({ user, onLogout }: {
+  user: User | null
+  onLogout: () => void
+}) {
   const pathname    = usePathname()
   const displayName = user?.user_metadata?.full_name
     ?? user?.email?.split('@')[0] ?? 'Nova'
@@ -24,27 +62,23 @@ function DesktopSidebar({ user, onLogout }: { user: User | null; onLogout: () =>
     .split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <aside className="hidden lg:flex flex-col h-screen bg-nova-white border-r
-                      border-nova-border/40 w-56 xl:w-64 flex-shrink-0
-                      overflow-y-auto sticky top-0">
-
-      {/* Logo + tagline */}
-      <div className="px-5 pt-6 pb-4">
-        <Link href="/" className="flex items-center gap-2 group mb-1">
-          <span className="w-8 h-8 rounded-xl bg-nova-gradient flex items-center
-                           justify-center text-white font-display text-sm
-                           group-hover:scale-105 transition-transform shadow-nova-sm">
-            n
-          </span>
-          <span className="font-display text-xl text-nova-text">novana</span>
+    <aside
+      className="hidden lg:flex flex-col h-screen w-56 xl:w-60 flex-shrink-0
+                 sticky top-0 overflow-y-auto border-r border-nova-border/30"
+      style={{ background: '#FAF7F4' }}  // off-white beige — matches mockup
+    >
+      {/* Logo */}
+      <div className="px-5 pt-6 pb-2">
+        <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
+          <NovanaLogo size={28} />
         </Link>
-        <p className="text-[11px] text-nova-muted/70 leading-tight ml-10">
+        <p className="text-[11px] text-nova-muted/60 leading-tight mt-2 ml-0.5">
           Understand your body,<br />Empower your journey
         </p>
       </div>
 
       {/* Nav links */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5">
+      <nav className="flex-1 px-3 py-3 space-y-0.5">
         {TABS.map((tab) => {
           const isActive = pathname === tab.href
           return (
@@ -52,8 +86,8 @@ function DesktopSidebar({ user, onLogout }: { user: User | null; onLogout: () =>
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl
                          text-sm transition-all duration-200
                          ${isActive
-                           ? 'bg-nova-purple/10 text-nova-purple font-medium'
-                           : 'text-nova-muted hover:bg-nova-bg hover:text-nova-text'
+                           ? 'bg-nova-purple/12 text-nova-purple font-semibold'
+                           : 'text-nova-muted hover:bg-nova-card hover:text-nova-text font-medium'
                          }`}>
               <span className="text-base w-5 text-center shrink-0">{tab.icon}</span>
               <span>{tab.label}</span>
@@ -65,34 +99,41 @@ function DesktopSidebar({ user, onLogout }: { user: User | null; onLogout: () =>
         })}
       </nav>
 
-      {/* Motivational card */}
-      <div className="mx-3 mb-4 rounded-2xl overflow-hidden">
-        <div className="relative p-4"
-             style={{
-               background: 'linear-gradient(160deg, #EFE6DF, #E8C4B8)',
-             }}>
-          {/* Decorative circle */}
-          <div className="absolute bottom-0 right-0 w-20 h-20 rounded-full
-                          bg-nova-rose/20 blur-xl" />
-          <p className="text-xs text-nova-muted relative z-10 leading-relaxed mb-1">
-            You're not alone.
-          </p>
-          <p className="text-xs font-medium text-nova-text relative z-10 leading-relaxed">
-            You're becoming something. ✦
-          </p>
+      {/* Motivational card with sunset-water.png */}
+      <div className="mx-3 mb-4 rounded-2xl overflow-hidden shadow-nova-sm">
+        <div className="relative h-32">
+          <Image
+            src="/images/sunset-water.png"
+            alt="Motivational background"
+            fill
+            className="object-cover"
+            style={{ filter: 'brightness(0.8) saturate(0.9)' }}
+          />
+          <div className="absolute inset-0"
+               style={{
+                 background: 'linear-gradient(160deg, rgba(123,111,168,0.4) 0%, rgba(232,169,139,0.3) 100%)',
+               }} />
+          <div className="relative z-10 p-4 h-full flex flex-col justify-end">
+            <p className="text-white/80 text-xs leading-relaxed">
+              You're not alone.
+            </p>
+            <p className="text-white text-xs font-semibold leading-relaxed">
+              You're becoming something. ✦
+            </p>
+          </div>
         </div>
       </div>
 
       {/* User profile */}
-      <div className="border-t border-nova-border/40 p-3">
+      <div className="border-t border-nova-border/30 p-3">
         <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl
-                        hover:bg-nova-bg transition-colors cursor-pointer group">
+                        hover:bg-nova-card transition-colors group cursor-pointer">
           <div className="w-8 h-8 rounded-full bg-nova-gradient flex items-center
-                          justify-center text-white text-xs font-medium shrink-0">
+                          justify-center text-white text-xs font-semibold shrink-0">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-nova-text truncate">
+            <p className="text-sm font-semibold text-nova-text truncate">
               {displayName}
             </p>
             <p className="text-[10px] text-nova-muted">View profile</p>
@@ -121,19 +162,17 @@ function MobileTopBar({ user }: { user: User | null }) {
 
   return (
     <header className="lg:hidden flex items-center justify-between
-                       bg-nova-white/90 backdrop-blur-md border-b border-nova-border/40
-                       px-5 py-3 sticky top-0 z-30">
-      <Link href="/" className="flex items-center gap-2">
-        <span className="w-7 h-7 rounded-lg bg-nova-gradient flex items-center
-                         justify-center text-white font-display text-xs">n</span>
-        <span className="font-display text-lg text-nova-text">novana</span>
+                       border-b border-nova-border/40 px-5 py-3 sticky top-0 z-30"
+            style={{ background: '#FAF7F4' }}>
+      <Link href="/">
+        <NovanaLogo size={24} />
       </Link>
       <span className="font-display text-nova-text text-sm absolute
                        left-1/2 -translate-x-1/2">
         {pageTitle}
       </span>
       <div className="w-8 h-8 rounded-full bg-nova-gradient flex items-center
-                      justify-center text-white text-xs font-medium">
+                      justify-center text-white text-xs font-semibold">
         {initial}
       </div>
     </header>
@@ -142,13 +181,13 @@ function MobileTopBar({ user }: { user: User | null }) {
 
 // ── Mobile bottom tab bar ─────────────────────────────────────────────────────
 function BottomTabBar() {
-  const pathname = usePathname()
-  const mobileTabs = TABS.filter((t) => t.href !== '/settings')
+  const pathname    = usePathname()
+  const mobileTabs  = TABS.filter((t) => t.href !== '/settings')
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40
-                    bg-nova-white/95 backdrop-blur-md border-t border-nova-border/40
-                    flex items-stretch">
+                    border-t border-nova-border/40 flex items-stretch"
+         style={{ background: '#FAF7F4' }}>
       {mobileTabs.map((tab) => {
         const isActive = pathname === tab.href
         return (

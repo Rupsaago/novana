@@ -4,12 +4,13 @@
 import { useState, useEffect } from 'react'
 import { createClient }        from '@/lib/supabase'
 import { useRouter }           from 'next/navigation'
+import Link                    from 'next/link'
 
 export default function SettingsPage() {
-  const router                  = useRouter()
-  const [email, setEmail]       = useState('')
-  const [name, setName]         = useState('')
-  const [loading, setLoading]   = useState(true)
+  const router                = useRouter()
+  const [email, setEmail]     = useState('')
+  const [name, setName]       = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const supabase = createClient()
@@ -30,17 +31,20 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-xl space-y-5">
       <div>
-        <h1 className="font-display text-3xl text-nova-text">Settings ⚙️</h1>
+        <h1 className="font-display text-3xl font-semibold text-nova-text">
+          Settings
+        </h1>
         <p className="text-nova-muted text-sm mt-1">Manage your account</p>
       </div>
 
-      {/* Profile card */}
-      <div className="bg-nova-white rounded-3xl border border-nova-border/30
+      {/* Profile */}
+      <div className="bg-nova-white rounded-3xl border border-nova-border/20
                       shadow-nova-sm p-6 space-y-4">
-        <h2 className="font-display text-lg text-nova-text">Profile</h2>
-
+        <h2 className="font-display text-lg font-semibold text-nova-text">
+          Profile
+        </h2>
         {loading ? (
           <div className="animate-pulse space-y-3">
             <div className="h-4 bg-nova-border/40 rounded w-32" />
@@ -48,38 +52,39 @@ export default function SettingsPage() {
           </div>
         ) : (
           <>
-            <div>
-              <p className="text-xs text-nova-muted mb-1">Name</p>
-              <p className="text-sm font-medium text-nova-text">{name || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-nova-muted mb-1">Email</p>
-              <p className="text-sm font-medium text-nova-text">{email}</p>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-nova-gradient flex items-center
+                              justify-center text-white font-display text-xl">
+                {name?.[0]?.toUpperCase() ?? email?.[0]?.toUpperCase() ?? 'N'}
+              </div>
+              <div>
+                <p className="font-semibold text-nova-text">{name || '—'}</p>
+                <p className="text-sm text-nova-muted">{email}</p>
+              </div>
             </div>
           </>
         )}
       </div>
 
-      {/* About card */}
-      <div className="bg-nova-white rounded-3xl border border-nova-border/30
-                      shadow-nova-sm p-6 space-y-3">
-        <h2 className="font-display text-lg text-nova-text">About</h2>
-        <div className="space-y-2 text-sm">
-          <a href="/about" className="flex items-center justify-between py-2
-                                      border-b border-nova-border/30 text-nova-muted
-                                      hover:text-nova-text transition-colors">
-            <span>About Novana</span><span>→</span>
-          </a>
-          <a href="/privacy" className="flex items-center justify-between py-2
-                                        border-b border-nova-border/30 text-nova-muted
-                                        hover:text-nova-text transition-colors">
-            <span>Privacy Policy</span><span>→</span>
-          </a>
-          <a href="/terms" className="flex items-center justify-between py-2
-                                      text-nova-muted hover:text-nova-text transition-colors">
-            <span>Terms of Service</span><span>→</span>
-          </a>
-        </div>
+      {/* Links */}
+      <div className="bg-nova-white rounded-3xl border border-nova-border/20
+                      shadow-nova-sm p-5 space-y-1">
+        <h2 className="font-display text-lg font-semibold text-nova-text mb-3">
+          About
+        </h2>
+        {[
+          { href: '/about',   label: 'About Novana'    },
+          { href: '/privacy', label: 'Privacy Policy'  },
+          { href: '/terms',   label: 'Terms of Service'},
+        ].map((item) => (
+          <Link key={item.href} href={item.href}
+                className="flex items-center justify-between py-3 px-1
+                           border-b border-nova-border/20 last:border-0
+                           text-sm text-nova-muted hover:text-nova-text transition-colors">
+            <span>{item.label}</span>
+            <span className="text-nova-muted/40">→</span>
+          </Link>
+        ))}
       </div>
 
       {/* Disclaimer */}
@@ -87,15 +92,15 @@ export default function SettingsPage() {
                       rounded-2xl px-5 py-4">
         <p className="text-xs text-nova-muted leading-relaxed">
           ⚠️ Novana provides pattern insights only and is not a medical service.
-          Always consult a qualified healthcare professional.
+          Always consult a qualified healthcare professional for any health concerns.
         </p>
       </div>
 
       {/* Logout */}
       <button
         onClick={handleLogout}
-        className="w-full py-3 rounded-2xl border border-nova-rose/30
-                   text-nova-rose text-sm font-medium hover:bg-nova-rose/10
+        className="w-full py-3.5 rounded-2xl border border-nova-rose/30
+                   text-nova-rose text-sm font-semibold hover:bg-nova-rose/10
                    transition-colors"
       >
         Log out
