@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import type { JournalRow } from '@/types/database'
 
 const MOODS = [
@@ -58,6 +59,11 @@ export default function JournalPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    const draft = localStorage.getItem('journal_draft')
+    if (draft) setContent(draft)
+  }, [])
+
   async function handleSave() {
     if (!content.trim()) return
     setSaving(true); setError(null)
@@ -67,6 +73,7 @@ export default function JournalPage() {
       if (!res.ok) { setError(json.error ?? 'Failed to save.'); return }
       setEntries((prev) => [json.data, ...prev])
       setContent('')
+      localStorage.removeItem('journal_draft')
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch { setError('Network error. Please try again.') }
@@ -160,13 +167,12 @@ export default function JournalPage() {
                     }}>{t.label}</button>
                   )
                 })}
-                <button style={{ padding: '6px 12px', borderRadius: 999, border: '1px dashed var(--nova-border-soft)', background: 'transparent', color: 'var(--nova-muted)', fontSize: 12, cursor: 'pointer' }}>+ Custom tag</button>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, gap: 10 }}>
                 <div style={{ fontSize: 12, color: 'var(--nova-muted)' }}>{wordCount} words{saveSuccess ? ' · saved just now' : ''}</div>
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button className="btn-soft" style={{ fontSize: 13 }}>Save as draft</button>
+                  <button className="btn-soft" style={{ fontSize: 13 }} onClick={() => { if (content.trim()) localStorage.setItem('journal_draft', content) }}>Save as draft</button>
                   <button onClick={handleSave} disabled={saving || !content.trim()} className="btn-primary" style={{ opacity: (saving || !content.trim()) ? 0.6 : 1 }}>
                     {saving ? 'Saving…' : '✓ Save entry'}
                   </button>
@@ -200,9 +206,9 @@ export default function JournalPage() {
               <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 1.6, margin: '0 0 12px', position: 'relative', zIndex: 1 }}>
                 Tonight&apos;s entry leans toward <em style={{ background: 'rgba(232,169,139,0.32)', padding: '1px 4px', borderRadius: 4, fontStyle: 'normal' }}>soft and hopeful</em> — a tone Novana has seen most on follicular-phase evenings.
               </p>
-              <button style={{ marginTop: 8, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '8px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer', position: 'relative', zIndex: 1 }}>
+              <Link href="/insights" style={{ marginTop: 8, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '8px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer', position: 'relative', zIndex: 1, textDecoration: 'none', display: 'inline-block' }}>
                 View full insights →
-              </button>
+              </Link>
               <div style={{ marginTop: 14, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>Educational — not medical advice.</div>
             </div>
 

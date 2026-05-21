@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
     '/dashboard', '/analytics', '/insights', '/journal', '/settings',
     '/cycle', '/resources', '/ask', '/reports', '/calendar', '/circle', '/connect',
     '/doctor-prep', '/share', '/get-app', '/today',
+    '/setttings', '/preview',
   ]
   const isProtected    = protectedPaths.some((p) => pathname.startsWith(p))
   if (isProtected && !session) {

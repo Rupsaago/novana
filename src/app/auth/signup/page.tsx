@@ -2,7 +2,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
@@ -12,7 +12,7 @@ export default function SignupPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState<string | null>(null)
+  const [error, setError]       = useState<ReactNode>(null)
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -38,7 +38,7 @@ export default function SignupPage() {
 
       if (error) {
         if (error.message.includes('already registered')) {
-          setError('An account with this email already exists. Try logging in instead.')
+          setError(<>An account with this email already exists.{' '}<Link href="/auth/login" className="underline font-medium">Log in instead →</Link></>)
         } else if (error.message.includes('password')) {
           setError('Password is too weak. Use at least 8 characters.')
         } else {

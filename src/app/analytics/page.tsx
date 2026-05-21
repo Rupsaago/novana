@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
                   <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ fontSize: 13, color: 'var(--nova-muted)' }}>Loading trends…</div>
                   </div>
-                ) : chartData.length < 2 ? (
+                ) : chartData.length < 3 ? (
                   <div style={{ height: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <p style={{ fontSize: 13, color: 'var(--nova-purple)', fontWeight: 600 }}>Log a few more days to see trends</p>
                     <p style={{ fontSize: 12, color: 'var(--nova-muted)' }}>{chartData.length} of 3 days needed</p>

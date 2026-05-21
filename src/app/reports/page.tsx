@@ -18,8 +18,8 @@ export default function ReportsPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button style={{ padding: '10px 18px', borderRadius: 999, background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', fontSize: 13, cursor: 'pointer', color: 'var(--nova-text)' }}>↓ Download</button>
-          <button style={{ padding: '10px 18px', borderRadius: 999, background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', fontSize: 13, cursor: 'pointer', color: 'var(--nova-text)' }}>Share with doctor</button>
+          <button onClick={() => window.print()} style={{ padding: '10px 18px', borderRadius: 999, background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', fontSize: 13, cursor: 'pointer', color: 'var(--nova-text)' }}>↓ Download</button>
+          <button onClick={() => { window.location.href = 'mailto:?subject=My%20Novana%20Monthly%20Report&body=Hi%2C%0A%0AI%27d%20like%20to%20share%20my%20monthly%20wellness%20report%20from%20Novana%20with%20you.' }} style={{ padding: '10px 18px', borderRadius: 999, background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', fontSize: 13, cursor: 'pointer', color: 'var(--nova-text)' }}>Share with doctor</button>
         </div>
       </div>
 

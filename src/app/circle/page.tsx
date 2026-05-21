@@ -1,6 +1,9 @@
-﻿'use client'
+'use client'
 import { useState } from 'react'
 import Image from 'next/image'
+import ComingSoonPage from '@/components/ComingSoonPage'
+
+const SHOW_PREVIEW = false
 
 const FILTER_CHIPS = ['All', 'Same phase as me', 'PMOS', 'Cycle aware', 'First timers', 'Long days']
 
@@ -51,7 +54,7 @@ function PostReactions({ r1, r2, dark }: { r1: { label: string; active: boolean 
   )
 }
 
-export default function CirclePage() {
+export function CircleContent() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [compose, setCompose] = useState('')
 
@@ -228,4 +231,17 @@ export default function CirclePage() {
       <div style={{ height: 24 }} />
     </>
   )
+}
+
+export default function CirclePage() {
+  if (!SHOW_PREVIEW) {
+    return (
+      <ComingSoonPage
+        title="The Circle"
+        feature="circle"
+        description="An anonymous community for women to share soft reflections, connect across cycle phases, and feel less alone."
+      />
+    )
+  }
+  return <CircleContent />
 }

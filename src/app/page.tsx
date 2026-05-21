@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import WaitlistFooterForm from '@/components/WaitlistFooterForm'
 
 export default function LandingPage() {
   return (
@@ -42,12 +43,6 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/onboarding" className="btn-primary px-5 py-3">Get started — free</Link>
-            <Link href="/dashboard" className="btn-ghost px-5 py-3">View demo →</Link>
-          </div>
-          <div className="flex gap-7 mt-10 text-sm text-nova-muted">
-            <div><b className="font-display text-[28px] font-normal text-nova-text block mb-0.5">12k+</b>People tracking</div>
-            <div><b className="font-display text-[28px] font-normal text-nova-text block mb-0.5">34</b>Symptoms supported</div>
-            <div><b className="font-display text-[28px] font-normal text-nova-text block mb-0.5">4.9 ★</b>App Store rating</div>
           </div>
           <p className="disclaimer mt-7">This is not medical advice — Novana is a wellness journaling tool, not a diagnostic service.</p>
         </div>
@@ -102,19 +97,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TRUST BAR */}
-      <section className="max-w-[1240px] mx-auto px-6 mt-14">
-        <div className="card-warm px-8 py-5 flex justify-between items-center gap-6 flex-wrap">
-          <span className="eyebrow">Featured in</span>
-          <div className="flex gap-10 flex-wrap font-display text-[18px] text-nova-muted">
-            <span className="italic">Well + Good</span>
-            <span className="font-medium">Vogue</span>
-            <span className="tracking-[0.3em] text-sm">FORBES</span>
-            <span className="italic">Refinery29</span>
-            <span className="font-medium">Bustle</span>
-          </div>
-        </div>
-      </section>
 
       {/* FEATURES */}
       <section className="max-w-[1240px] mx-auto px-6 mt-20" id="features">
@@ -162,10 +144,6 @@ export default function LandingPage() {
               <li>· Cycle-phase comparisons, not cycle-phase rules</li>
               <li>· Weekly emotional-pattern summaries</li>
             </ul>
-            <Link href="/insights" className="mt-7 inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full transition-all"
-                  style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff' }}>
-              See an insight →
-            </Link>
           </div>
           <div className="relative z-10 flex justify-center">
             <div className="glass p-5 max-w-[360px] w-full" style={{ color: '#2F2A28', background: 'rgba(253,250,247,0.88)' }}>
@@ -208,31 +186,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="max-w-[1240px] mx-auto px-6 mt-20" id="stories">
-        <div className="text-center mb-12">
-          <span className="eyebrow block mb-3">Stories</span>
-          <h2>Quiet shifts, told in their own words.</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5">
-          {[
-            { q: "I'd been told 'it's PMOS, learn to live with it' for years. Novana didn't fix anything — it just helped me see when my body was already talking.", name: 'Amara R.', dur: 'Tracking for 6 months', grad: 'linear-gradient(135deg, #D28CA7, #E8A98B)' },
-            { q: "The weekly summary feels like a friend who actually paid attention. I look forward to Sundays now.", name: 'Jiwoo L.', dur: 'Tracking for 3 months', grad: 'linear-gradient(135deg, #8FA7C6, #A89ED0)' },
-            { q: "Other apps made me feel surveilled. This one makes me feel softly seen.", name: 'Priya M.', dur: 'Tracking for 1 year', grad: 'linear-gradient(135deg, #E8A98B, #D28CA7)' },
-          ].map((t, i) => (
-            <div key={i} className="card-warm border border-nova-border-soft rounded-3xl p-7">
-              <blockquote className="font-display text-[19px] leading-relaxed tracking-[-0.01em] mb-5">&ldquo;{t.q}&rdquo;</blockquote>
-              <div className="flex items-center gap-3 text-sm">
-                <div className="w-9 h-9 rounded-full flex-shrink-0" style={{ background: t.grad }} />
-                <div>
-                  <div className="font-medium">{t.name}</div>
-                  <div className="text-nova-muted text-xs">{t.dur}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* MANIFESTO */}
       <section className="max-w-[1240px] mx-auto px-6 mt-20" id="manifesto">
@@ -353,7 +306,6 @@ export default function LandingPage() {
           <p className="max-w-[48ch] mx-auto mb-7 text-nova-muted">Two minutes to set up. No card, no email tricks, no streak guilt. Skip days. Come back when you want.</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/onboarding" className="btn-primary px-5 py-3">Create your free account</Link>
-            <Link href="/dashboard" className="btn-ghost px-5 py-3">View live demo →</Link>
           </div>
         </div>
       </section>
@@ -365,6 +317,11 @@ export default function LandingPage() {
             <Link href="/" className="wordmark" style={{ fontSize: '28px' }}>novana</Link>
             <p className="mt-3.5 text-sm text-nova-muted max-w-[32ch] leading-relaxed">A calm wellness companion for every woman — tracking cycles, symptoms, and emotional rhythms.</p>
             <p className="disclaimer mt-3.5">Novana is not a medical device. This is not medical advice.</p>
+            <div style={{ marginTop: 18 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--nova-text)', marginBottom: 4 }}>Early access</p>
+              <p style={{ fontSize: 12, color: 'var(--nova-muted)', marginBottom: 0 }}>Be first to know when Novana opens to everyone.</p>
+              <WaitlistFooterForm />
+            </div>
           </div>
           <div className="space-y-3">
             <h5 className="font-semibold text-sm">Product</h5>
@@ -374,7 +331,7 @@ export default function LandingPage() {
           </div>
           <div className="space-y-3">
             <h5 className="font-semibold text-sm">Company</h5>
-            {[['Manifesto', '#manifesto'], ['Library', '/resources'], ['Circle', '/circle'], ['Pricing', '#pricing'], ['Stories', '#stories']].map(([l, h]) => (
+            {[['Manifesto', '#manifesto'], ['Library', '/resources'], ['Circle', '/circle'], ['Pricing', '#pricing']].map(([l, h]) => (
               <a key={l} href={h} className="block text-sm text-nova-muted hover:text-nova-text transition-colors">{l}</a>
             ))}
           </div>
@@ -388,7 +345,7 @@ export default function LandingPage() {
         </div>
         <div className="border-t border-nova-border/30 px-6 py-5 max-w-[1240px] mx-auto flex justify-between text-xs text-nova-muted">
           <span>© 2026 Novana, Inc. Made with quiet care.</span>
-          <span>San Francisco · Lisbon · Bangalore</span>
+          <span>San Francisco, CA</span>
         </div>
       </footer>
     </div>

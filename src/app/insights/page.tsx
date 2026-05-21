@@ -282,7 +282,7 @@ export default function InsightsPage() {
                 <h3 className="font-display" style={{ fontSize: 24, fontWeight: 400, margin: 0 }}>A quiet week of rest and small clarity.</h3>
                 <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginTop: 4 }}>Generated Sunday · from 6 entries</div>
               </div>
-              <button className="btn-soft" style={{ fontSize: 13 }}>Regenerate</button>
+              <button onClick={handleAnalyse} disabled={loading} className="btn-soft" style={{ fontSize: 13 }}>Regenerate</button>
             </div>
           </div>
           <div style={{ padding: 24 }}>

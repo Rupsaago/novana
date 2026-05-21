@@ -209,8 +209,6 @@ export default function CyclePage() {
         {phases.map((p) => (
           <div
             key={p.key}
-            onClick={() => setActivePhase(p.key)}
-
             style={{
               position: 'relative',
               borderRadius: 'var(--radius-lg)',
@@ -221,8 +219,7 @@ export default function CyclePage() {
               color: 'var(--nova-text)',
               display: 'flex', flexDirection: 'column',
               justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'transform .2s ease, box-shadow .2s ease',
+              transition: 'box-shadow .2s ease',
               border: activePhase === p.key
                 ? '2px solid var(--nova-purple)'
                 : '1px solid var(--nova-border-soft)',
@@ -475,7 +472,7 @@ export default function CyclePage() {
           </h4>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--nova-muted)', lineHeight: 1.55 }}>
             This timeline is built for &ldquo;average&rdquo; cycles, which most of us don&apos;t have. PMOS, perimenopause, hormonal contraception, stress, and dozens of other reasons can scramble it. Novana still works — we just lean more on what you log, less on calendar math.{' '}
-            <Link href="/settings" style={{ color: 'var(--nova-purple-dark)', fontWeight: 500 }}>Open your cycle settings</Link>{' '}
+            <Link href="/setttings" style={{ color: 'var(--nova-purple-dark)', fontWeight: 500 }}>Open your cycle settings</Link>{' '}
             to adjust.
           </p>
         </div>

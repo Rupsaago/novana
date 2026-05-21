@@ -47,6 +47,7 @@ const NAV_ITEMS = [
   { href: '#notifs',       label: 'Notifications'     },
   { href: '#theme',        label: 'Theme'             },
   { href: '#subscription', label: 'Subscription'      },
+  { href: '#premium',      label: 'Premium'           },
   { href: '#security',     label: 'Account & security'},
 ]
 
@@ -58,6 +59,9 @@ export default function SettingsPage() {
   const [activeNav, setActiveNav]       = useState('#profile')
   const [selectedTheme, setSelectedTheme] = useState(0)
   const [font, setFont]   = useState<'fraunces'|'dmsans'>('fraunces')
+
+  const [premiumEmail, setPremiumEmail] = useState('')
+  const [premiumStatus, setPremiumStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
 
   const [toggles, setToggles] = useState({
     e2e: true, research: false, localAI: true,
@@ -75,6 +79,21 @@ export default function SettingsPage() {
       setLoading(false)
     })
   }, [])
+
+  async function handlePremiumWaitlist() {
+    if (!premiumEmail.trim() || premiumStatus !== 'idle') return
+    setPremiumStatus('loading')
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: premiumEmail.trim(), feature: 'premium' }),
+      })
+      setPremiumStatus(res.ok ? 'done' : 'error')
+    } catch {
+      setPremiumStatus('error')
+    }
+  }
 
   async function handleLogout() {
     await createClient().auth.signOut()
@@ -225,6 +244,43 @@ export default function SettingsPage() {
               <button style={{ background: 'rgba(255,255,255,0.96)', color: 'var(--nova-text)', padding: '12px 22px', borderRadius: 999, border: 'none', cursor: 'pointer', fontWeight: 500, position: 'relative', zIndex: 1 }}>
                 Upgrade to Premium →
               </button>
+            </section>
+
+            {/* Premium Coming Soon */}
+            <section className="card" id="premium" style={{ padding: 28 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(123,111,168,0.1)', border: '1px solid rgba(123,111,168,0.2)', padding: '4px 12px', borderRadius: 999, fontSize: 11, color: 'var(--nova-purple-dark)', marginBottom: 14 }}>
+                ✦ Coming soon
+              </span>
+              <h3 className="font-display" style={{ fontSize: 22, fontWeight: 400, margin: '0 0 6px' }}>Novana Premium</h3>
+              <p style={{ color: 'var(--nova-muted)', fontSize: 13, margin: '0 0 18px' }}>
+                Be first to unlock unlimited AI insights, PDF reports for your doctor, wearable integrations, and cross-cycle analytics.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 14px', marginBottom: 22 }}>
+                {['Unlimited AI insights', 'Year-over-year cycle view', 'Custom symptoms & tags', 'PDF reports for your provider', 'Wearable integrations', 'Advanced privacy controls'].map((p) => (
+                  <div key={p} style={{ fontSize: 13, color: 'var(--nova-muted)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span style={{ width: 6, height: 6, background: 'var(--nova-purple)', borderRadius: '50%', display: 'inline-block', flexShrink: 0 }} />
+                    {p}
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <input
+                  type="email"
+                  value={premiumEmail}
+                  onChange={(e) => setPremiumEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  disabled={premiumStatus === 'loading' || premiumStatus === 'done'}
+                  style={{ flex: 1, padding: '10px 16px', borderRadius: 999, border: '1px solid var(--nova-border-soft)', fontSize: 13, background: 'var(--nova-card)', outline: 'none' }}
+                />
+                <button
+                  onClick={handlePremiumWaitlist}
+                  disabled={premiumStatus === 'loading' || premiumStatus === 'done'}
+                  style={{ padding: '10px 20px', borderRadius: 999, background: 'var(--nova-purple)', color: '#fff', border: 'none', fontSize: 13, cursor: premiumStatus === 'done' ? 'default' : 'pointer', whiteSpace: 'nowrap' as const, opacity: premiumStatus === 'loading' ? 0.7 : 1 }}
+                >
+                  {premiumStatus === 'done' ? '✓ On the list' : premiumStatus === 'loading' ? 'Joining…' : 'Join waitlist →'}
+                </button>
+              </div>
+              {premiumStatus === 'error' && <p style={{ fontSize: 12, color: 'var(--nova-rose)', marginTop: 8 }}>Something went wrong. Please try again.</p>}
             </section>
 
             {/* Account & security */}

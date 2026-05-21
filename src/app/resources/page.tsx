@@ -1,7 +1,10 @@
-﻿'use client'
+'use client'
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import ComingSoonPage from '@/components/ComingSoonPage'
+
+const SHOW_PREVIEW = false
 
 const TOPICS = ['All', 'PMOS', 'Cycle science', 'Hormones', 'Mental health', 'Nutrition', 'Movement', 'Skin', 'Fertility', 'Sleep', 'Perimenopause']
 
@@ -144,7 +147,7 @@ function ArticleCard({ article }: { article: typeof ARTICLES_MAIN[0] }) {
   )
 }
 
-export default function ResourcesPage() {
+export function ResourcesContent() {
   const [activeTopic, setActiveTopic] = useState('All')
   const [askQ, setAskQ] = useState('')
 
@@ -359,4 +362,17 @@ export default function ResourcesPage() {
       </section>
     </>
   )
+}
+
+export default function ResourcesPage() {
+  if (!SHOW_PREVIEW) {
+    return (
+      <ComingSoonPage
+        title="Novana Library"
+        feature="resources"
+        description="Evidence-based articles on PMOS, hormones, cycle science, and more — written in plain language, reviewed by clinicians."
+      />
+    )
+  }
+  return <ResourcesContent />
 }

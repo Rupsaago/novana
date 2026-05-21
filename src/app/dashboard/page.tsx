@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [selectedMood, setSelectedMood] = useState(7)
   const [showDetail, setShowDetail]   = useState(false)
   const [saved, setSaved]             = useState(false)
+  const [skipped, setSkipped]         = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -187,10 +188,10 @@ export default function DashboardPage() {
             {/* Shortcuts */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginTop: 6 }}>
               {[
-                { icon: '↻', label: 'Same as yesterday' },
-                { icon: '✕', label: 'Skip today' },
+                { icon: '↻', label: 'Same as yesterday', onClick: handleSave },
+                { icon: '✕', label: skipped ? 'Skipped ✓' : 'Skip today', onClick: () => { setSkipped(true); setTimeout(() => setSkipped(false), 2000) } },
               ].map((s) => (
-                <button key={s.label} style={{
+                <button key={s.label} onClick={s.onClick} style={{
                   background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.95)',
                   padding: '8px 14px', borderRadius: 999, fontSize: 12, color: 'var(--nova-text)',
                   cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -331,7 +332,7 @@ export default function DashboardPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {[
                   { label: 'Mood',   val: averages?.avg_mood ?? '—',        unit: '/10', color: '#7B6FA8', bg: '#EAE0F2', delta: '↑ 1 from yesterday', deltaColor: 'var(--nova-purple-dark)',
-                    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg> },
+                    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg> },
                   { label: 'Energy', val: averages?.avg_fatigue ?? '—',     unit: '%',   color: '#A87155', bg: '#F1D7C5', delta: '↓ 4 from yesterday', deltaColor: '#A87155',
                     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m13 2-9 12h7l-1 8 9-12h-7z"/></svg> },
                   { label: 'Sleep',  val: averages?.avg_sleep_hours ?? '—', unit: 'h',   color: '#5A6F8F', bg: '#D9E0EC', delta: '→ Steady', deltaColor: '#5A6F8F',

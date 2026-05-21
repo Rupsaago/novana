@@ -287,8 +287,14 @@ export default function DoctorPrepPage() {
 
       {/* Action bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr', gap: 14, alignItems: 'center', background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', borderRadius: 'var(--radius-lg)', padding: '18px 22px' }}>
-        <button style={{ padding: '12px 22px', borderRadius: 999, background: 'var(--nova-purple)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>↓ Download PDF</button>
-        <button style={{ padding: '12px 22px', borderRadius: 999, background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', fontSize: 14, cursor: 'pointer', color: 'var(--nova-text)' }}>Email to Dr. Emerson</button>
+        <div style={{ position: 'relative' }}>
+          <button disabled style={{ padding: '12px 22px', borderRadius: 999, background: 'var(--nova-purple)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 500, cursor: 'not-allowed', opacity: 0.45 }}>↓ Download PDF</button>
+          <span style={{ position: 'absolute', top: -8, right: -8, fontSize: 9, background: 'var(--nova-purple-dark)', color: '#fff', padding: '2px 7px', borderRadius: 999, letterSpacing: '0.08em', textTransform: 'uppercase' as const, fontWeight: 600 }}>Soon</span>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <button disabled style={{ padding: '12px 22px', borderRadius: 999, background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', fontSize: 14, cursor: 'not-allowed', color: 'var(--nova-muted)', opacity: 0.45 }}>Email to Dr. Emerson</button>
+          <span style={{ position: 'absolute', top: -8, right: -8, fontSize: 9, background: 'var(--nova-purple-dark)', color: '#fff', padding: '2px 7px', borderRadius: 999, letterSpacing: '0.08em', textTransform: 'uppercase' as const, fontWeight: 600 }}>Soon</span>
+        </div>
         <p style={{ color: 'var(--nova-muted)', fontSize: 12, textAlign: 'right', margin: 0 }}>
           Your data never leaves your account.{' '}
           <a href="#" style={{ color: 'var(--nova-purple-dark)', textDecoration: 'underline' }}>Privacy details →</a>

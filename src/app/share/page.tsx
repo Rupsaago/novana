@@ -1,5 +1,8 @@
 'use client'
 import { useState } from 'react'
+import ComingSoonPage from '@/components/ComingSoonPage'
+
+const SHOW_PREVIEW = false
 
 type Mode = 'partner' | 'provider'
 
@@ -7,7 +10,7 @@ const DEFAULT_SWITCHES: Record<string, boolean> = {
   phase: true, period: true, mood: true, symptoms: false, vibe: true,
 }
 
-export default function SharePage() {
+export function ShareContent() {
   const [mode, setMode] = useState<Mode>('partner')
   const [activeRecipient, setActiveRecipient] = useState<'partner' | 'friend'>('partner')
   const [switches, setSwitches] = useState(DEFAULT_SWITCHES)
@@ -297,4 +300,17 @@ export default function SharePage() {
       <p className="disclaimer" style={{ textAlign: 'center' }}>Shared links are end-to-end encrypted. Recipients cannot copy, screenshot, or save your data. This is not medical advice.</p>
     </>
   )
+}
+
+export default function SharePage() {
+  if (!SHOW_PREVIEW) {
+    return (
+      <ComingSoonPage
+        title="Share with care"
+        feature="share"
+        description="Send a soft snapshot of your cycle data to a partner, friend, or doctor. You control exactly what they see."
+      />
+    )
+  }
+  return <ShareContent />
 }
