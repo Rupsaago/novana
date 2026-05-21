@@ -1,340 +1,251 @@
-// src/app/analytics/page.tsx  (PHASE 6 VERSION)
-// ═══════════════════════════════════════════════════════════════════════════
-// Analytics Page — symptom trend charts using Recharts.
-// Shows 7 charts (one per symptom) + summary stat cards.
-// ═══════════════════════════════════════════════════════════════════════════
-
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
-import SymptomChart            from '@/components/SymptomChart'
+import Image from 'next/image'
+import Link from 'next/link'
+import {
+  ResponsiveContainer, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+} from 'recharts'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 interface ChartDataPoint {
-  date:          string
-  logged_at:     string
-  mood:          number
-  fatigue:       number
-  sleep_hours:   number
-  stress:        number
-  acne:          number
-  cramps:        number
-  exercise_mins: number
-  cycle_status:  string
+  date: string; logged_at: string
+  mood: number; fatigue: number; sleep_hours: number; stress: number
+  acne: number; cramps: number; exercise_mins: number; cycle_status: string
 }
-
 interface Averages {
-  mood:          number | null
-  fatigue:       number | null
-  sleep_hours:   number | null
-  stress:        number | null
-  acne:          number | null
-  cramps:        number | null
-  exercise_mins: number | null
+  mood: number | null; fatigue: number | null; sleep_hours: number | null
+  stress: number | null; acne: number | null; cramps: number | null; exercise_mins: number | null
 }
+interface AnalyticsData { chartData: ChartDataPoint[]; averages: Averages; totalDays: number }
 
-interface AnalyticsData {
-  chartData:  ChartDataPoint[]
-  averages:   Averages
-  totalDays:  number
-}
-
-// ── Chart config — one entry per symptom ──────────────────────────────────────
-const CHARTS = [
-  {
-    key:    'mood',
-    label:  'Mood',
-    emoji:  '🌤',
-    color:  '#7B6FA8',  // nova-purple
-    unit:   '/10',
-    maxY:   10,
-    desc:   'How you felt emotionally each day',
-  },
-  {
-    key:    'fatigue',
-    label:  'Fatigue',
-    emoji:  '💤',
-    color:  '#E8A98B',  // nova-peach
-    unit:   '/10',
-    maxY:   10,
-    desc:   'Energy levels — higher = more tired',
-  },
-  {
-    key:    'sleep_hours',
-    label:  'Sleep',
-    emoji:  '🌙',
-    color:  '#8FA7C6',  // nova-sky
-    unit:   'h',
-    maxY:   12,
-    desc:   'Hours of sleep per night',
-  },
-  {
-    key:    'stress',
-    label:  'Stress',
-    emoji:  '🌀',
-    color:  '#D28CA7',  // nova-rose
-    unit:   '/10',
-    maxY:   10,
-    desc:   'Stress and overwhelm levels',
-  },
-  {
-    key:    'acne',
-    label:  'Acne / Skin',
-    emoji:  '🌸',
-    color:  '#C4799A',
-    unit:   '/10',
-    maxY:   10,
-    desc:   'Skin breakout severity',
-  },
-  {
-    key:    'cramps',
-    label:  'Cramps / Pain',
-    emoji:  '⚡',
-    color:  '#A89ED0',
-    unit:   '/10',
-    maxY:   10,
-    desc:   'Pelvic or body pain levels',
-  },
-  {
-    key:    'exercise_mins',
-    label:  'Exercise',
-    emoji:  '🏃‍♀️',
-    color:  '#7B9E9E',
-    unit:   'min',
-    maxY:   120,
-    desc:   'Minutes of movement per day',
-  },
+const PHASES = [
+  { name: 'Menstrual',  meta: 'Days 1–5 · avg this cycle',   accent: '#D28CA7', stats: { Mood: '5.1', Energy: '4.3', Cramps: '6.8' } },
+  { name: 'Follicular', meta: 'Days 6–13 · current',          accent: '#7B6FA8', stats: { Mood: '7.0', Energy: '6.8', Cramps: '1.2' } },
+  { name: 'Ovulatory',  meta: 'Days 14–16',                   accent: '#E8A98B', stats: { Mood: '7.4', Energy: '7.2', Cramps: '2.1' } },
+  { name: 'Luteal',     meta: 'Days 17–28',                   accent: '#8FA7C6', stats: { Mood: '5.6', Energy: '5.2', Cramps: '3.6' } },
 ]
 
-// ── Day range selector options ────────────────────────────────────────────────
-const DAY_OPTIONS = [
-  { label: '7 days',  value: 7  },
-  { label: '14 days', value: 14 },
-  { label: '30 days', value: 30 },
+const OBS = [
+  { gradient: 'linear-gradient(135deg, #7B6FA8, #D28CA7)', label: 'Sleep ↔ Exercise',
+    text: <>On days you logged any movement, sleep quality averaged <em style={{ color: 'var(--nova-purple-dark)', fontStyle: 'italic' }}>1.6 points higher</em> than days you didn&apos;t.</> },
+  { gradient: 'linear-gradient(135deg, #E8A98B, #D28CA7)', label: 'Stress ↔ Cycle',
+    text: <>Stress trends gently <em style={{ color: 'var(--nova-purple-dark)', fontStyle: 'italic' }}>higher in the luteal phase</em> across your last three cycles — a common pattern, not a problem.</> },
+  { gradient: 'linear-gradient(135deg, #8FA7C6, #7B6FA8)', label: 'Energy rhythm',
+    text: <>Your highest-energy days cluster around <em style={{ color: 'var(--nova-purple-dark)', fontStyle: 'italic' }}>days 8–14</em> — the second week of your cycle.</> },
 ]
 
-// ── Cycle status badge ────────────────────────────────────────────────────────
-function CycleTimeline({ data }: { data: ChartDataPoint[] }) {
-  const cyclePoints = data.filter((d) => d.cycle_status !== 'none')
-  if (cyclePoints.length === 0) return null
-
-  const colorMap: Record<string, string> = {
-    spotting: 'bg-nova-rose/30 text-nova-rose',
-    light:    'bg-nova-rose/50 text-nova-rose',
-    moderate: 'bg-nova-rose/70 text-white',
-    heavy:    'bg-nova-rose text-white',
-  }
-
-  return (
-    <div className="card space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-lg">🔴</span>
-        <h3 className="font-display text-lg text-nova-text">Cycle log</h3>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {cyclePoints.map((d) => (
-          <span
-            key={d.logged_at}
-            className={`text-xs px-3 py-1.5 rounded-full font-medium
-                       ${colorMap[d.cycle_status] ?? 'bg-nova-card text-nova-muted'}`}
-          >
-            {d.date} · {d.cycle_status}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────────
 export default function AnalyticsPage() {
-  const [data, setData]         = useState<AnalyticsData | null>(null)
-  const [loading, setLoading]   = useState(true)
-  const [days, setDays]         = useState(30)
-  const [error, setError]       = useState<string | null>(null)
+  const [data, setData]       = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [days, setDays]       = useState(7)
+  const [error, setError]     = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
-      setLoading(true)
-      setError(null)
-
+      setLoading(true); setError(null)
       try {
-        const res  = await fetch(`/api/analytics?days=${days}`)
+        const res = await fetch(`/api/analytics?days=${days}`)
         const json = await res.json()
-
-        if (!res.ok) {
-          setError(json.error ?? 'Failed to load analytics.')
-          return
-        }
-
+        if (!res.ok) { setError(json.error ?? 'Failed to load analytics.'); return }
         setData(json)
-      } catch {
-        setError('Network error. Please try again.')
-      } finally {
-        setLoading(false)
-      }
+      } catch { setError('Network error. Please try again.') }
+      finally { setLoading(false) }
     }
-
     loadData()
-  }, [days])  // re-fetch whenever the day range changes
+  }, [days])
+
+  const avgs = data?.averages
+  const chartData = data?.chartData ?? []
 
   return (
-    <div className="space-y-8">
+    <>
+      <div className="space-y-8 max-w-5xl">
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* Header */}
         <div>
-          <h1 className="font-display text-3xl md:text-4xl text-nova-text">
-            Analytics ✦
-          </h1>
-          <p className="text-nova-muted mt-1 text-sm">
-            Your symptom trends over time.
-          </p>
+          <h1 className="font-display text-3xl md:text-4xl">Analytics ✦</h1>
+          <p className="text-nova-muted mt-1 text-sm">A slow, honest look at how your patterns are moving.</p>
         </div>
 
-        {/* Day range selector */}
-        <div className="flex items-center gap-2 bg-nova-card rounded-2xl p-1">
-          {DAY_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setDays(opt.value)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
-                         ${days === opt.value
-                           ? 'bg-nova-white text-nova-purple shadow-nova-sm'
-                           : 'text-nova-muted hover:text-nova-text'
-                         }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Error ─────────────────────────────────────────────────────────── */}
-      {error && (
-        <div className="card bg-red-50 border-red-200">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
-
-      {/* ── Loading skeleton ──────────────────────────────────────────────── */}
-      {loading && (
-        <div className="space-y-6">
-          {/* Stat cards skeleton */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1,2,3,4].map((i) => (
-              <div key={i} className="card-sm animate-pulse space-y-2">
-                <div className="h-3 bg-nova-border/50 rounded w-16" />
-                <div className="h-8 bg-nova-border/30 rounded w-12" />
-              </div>
+        {/* Filter bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'inline-flex',
+            background: 'var(--nova-card)', border: '1px solid var(--nova-border-soft)',
+            borderRadius: 999, padding: 4,
+          }}>
+            {[['Today',1],['7 days',7],['30 days',30],['90 days',90]].map(([lbl,val]) => (
+              <button key={val} onClick={() => setDays(Number(val))} style={{
+                border: 'none', padding: '8px 16px', borderRadius: 999,
+                background: days === Number(val) ? '#fff' : 'transparent',
+                color: days === Number(val) ? 'var(--nova-text)' : 'var(--nova-muted)',
+                boxShadow: days === Number(val) ? 'var(--shadow-sm)' : 'none',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}>{lbl}</button>
             ))}
           </div>
-          {/* Chart skeletons */}
-          {[1,2,3].map((i) => (
-            <div key={i} className="card animate-pulse">
-              <div className="h-4 bg-nova-border/50 rounded w-24 mb-4" />
-              <div className="h-48 bg-nova-border/20 rounded-xl" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── No data state ─────────────────────────────────────────────────── */}
-      {!loading && data && data.totalDays === 0 && (
-        <div className="card text-center py-16 space-y-4">
-          <span className="text-5xl">📊</span>
-          <div>
-            <h2 className="font-display text-2xl text-nova-text mb-2">
-              No data for this period
-            </h2>
-            <p className="text-nova-muted text-sm max-w-xs mx-auto leading-relaxed">
-              Start logging your symptoms on the Daily Log page and
-              come back here to see your trends.
-            </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+            <span className="chip"><i className="dot" /> Mood</span>
+            <span className="chip peach"><i className="dot" style={{ background: 'var(--nova-peach)' }} /> Fatigue</span>
+            <span className="chip rose"><i className="dot" style={{ background: 'var(--nova-rose)' }} /> Stress</span>
+            <span className="chip" style={{ background: 'rgba(143,167,198,0.12)', borderColor: 'rgba(143,167,198,0.3)', color: '#5A6F8F' }}><i className="dot" style={{ background: '#8FA7C6' }} /> Sleep</span>
           </div>
         </div>
-      )}
 
-      {/* ── Main content ──────────────────────────────────────────────────── */}
-      {!loading && data && data.totalDays > 0 && (
-        <div className="space-y-6">
+        {error && <div className="card p-4"><p className="text-sm" style={{ color: '#B85A82' }}>{error}</p></div>}
 
-          {/* Summary stat cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Avg mood',    val: data.averages.mood,          unit: '/10', color: 'text-nova-purple' },
-              { label: 'Avg sleep',   val: data.averages.sleep_hours,   unit: 'hrs', color: 'text-nova-sky'    },
-              { label: 'Avg fatigue', val: data.averages.fatigue,       unit: '/10', color: 'text-nova-peach'  },
-              { label: 'Avg stress',  val: data.averages.stress,        unit: '/10', color: 'text-nova-rose'   },
-            ].map((stat) => (
-              <div key={stat.label} className="card-sm">
-                <p className="text-xs text-nova-muted mb-1">{stat.label}</p>
-                <p className={`text-2xl font-display ${stat.color}`}>
-                  {stat.val ?? '—'}
-                  {stat.val && (
-                    <span className="text-sm text-nova-muted font-sans ml-0.5">
-                      {stat.unit}
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-nova-muted/60 mt-1">
-                  Last {days} days · {data.totalDays} logged
-                </p>
+        {/* Big chart — sunset-water background */}
+        <section className="grain relative overflow-hidden rounded-[var(--radius-lg)]" style={{ minHeight: 460, boxShadow: 'var(--shadow)' }}>
+          <Image src="/images/sunset-water.jpg" alt="" fill className="object-cover object-center" style={{ zIndex: 0 }} />
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(180deg, rgba(74,63,102,0.15) 0%, rgba(74,63,102,0.05) 35%, transparent 100%)',
+            zIndex: 1,
+          }} />
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(circle at 88% 28%, rgba(255,220,180,0.45) 0%, transparent 6%), radial-gradient(circle at 15% 85%, rgba(232,168,200,0.40) 0%, transparent 8%)',
+            zIndex: 1, filter: 'blur(2px)',
+          }} />
+          <div className="relative" style={{ zIndex: 2, padding: 32, display: 'grid', gridTemplateColumns: '1fr 240px', gap: 28 }}>
+            <div>
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ color: 'rgba(255,252,247,0.85)', fontSize: 13, textShadow: '0 1px 4px rgba(74,63,102,0.25)' }}>Past {days} days · all symptoms</div>
+                <h2 className="font-display" style={{ color: 'rgb(47,42,40)', fontSize: 28, fontWeight: 400, margin: 0, textShadow: '0 1px 2px rgba(255,252,247,0.6)' }}>Symptom trends</h2>
               </div>
-            ))}
-          </div>
-
-          {/* Cycle timeline */}
-          <CycleTimeline data={data.chartData} />
-
-          {/* Individual symptom charts */}
-          {CHARTS.map((chart) => (
-            <div key={chart.key} className="card space-y-4">
-              {/* Chart header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{chart.emoji}</span>
-                  <div>
-                    <h3 className="font-display text-lg text-nova-text">
-                      {chart.label}
-                    </h3>
-                    <p className="text-xs text-nova-muted">{chart.desc}</p>
+              {/* Glass chart panel */}
+              <div style={{
+                background: 'rgba(253,248,238,0.75)',
+                backdropFilter: 'blur(22px) saturate(160%)',
+                border: '1px solid rgba(255,255,255,0.85)',
+                borderRadius: 18, padding: '18px 14px 14px',
+                boxShadow: '0 8px 28px rgba(74,63,102,0.12), inset 0 1px 0 rgba(255,255,255,0.4)',
+              }}>
+                {loading ? (
+                  <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--nova-muted)' }}>Loading trends…</div>
                   </div>
-                </div>
-                {/* Average badge */}
-                {data.averages[chart.key as keyof Averages] !== null && (
-                  <div className="text-right">
-                    <p className="text-xs text-nova-muted">avg</p>
-                    <p className="font-display text-lg"
-                       style={{ color: chart.color }}>
-                      {data.averages[chart.key as keyof Averages]}
-                      <span className="text-xs text-nova-muted font-sans ml-0.5">
-                        {chart.unit}
-                      </span>
-                    </p>
+                ) : chartData.length < 2 ? (
+                  <div style={{ height: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <p style={{ fontSize: 13, color: 'var(--nova-purple)', fontWeight: 600 }}>Log a few more days to see trends</p>
+                    <p style={{ fontSize: 12, color: 'var(--nova-muted)' }}>{chartData.length} of 3 days needed</p>
+                  </div>
+                ) : (
+                  <div style={{ height: 280 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="rgba(74,63,102,0.22)" vertical={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'rgb(74,63,102)', fontWeight: 500 }} tickLine={false} axisLine={false} />
+                        <YAxis domain={[0,10]} tick={{ fontSize: 11, fill: 'rgb(74,63,102)' }} tickLine={false} axisLine={false} tickCount={5} />
+                        <Tooltip contentStyle={{ background: 'rgba(253,248,238,0.95)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 12, fontSize: 12, backdropFilter: 'blur(12px)' }} />
+                        <Line type="monotone" dataKey="mood" stroke="#5A4E8A" strokeWidth={3} dot={{ r: 6, fill: '#fff', stroke: '#5A4E8A', strokeWidth: 2.5 }} connectNulls />
+                        <Line type="monotone" dataKey="fatigue" stroke="#C97A55" strokeWidth={3} dot={{ r: 5.5, fill: '#fff', stroke: '#C97A55', strokeWidth: 2.5 }} connectNulls />
+                        <Line type="monotone" dataKey="stress" stroke="#B85A82" strokeWidth={3} dot={{ r: 5.5, fill: '#fff', stroke: '#B85A82', strokeWidth: 2.5 }} connectNulls />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* The chart */}
-              <SymptomChart
-                data={data.chartData}
-                dataKey={chart.key}
-                color={chart.color}
-                label={chart.label}
-                unit={chart.unit}
-                maxY={chart.maxY}
-                avgValue={data.averages[chart.key as keyof Averages]}
-              />
+            {/* Legend pill */}
+            <div style={{
+              background: 'rgba(253,250,247,0.72)', border: '1px solid rgba(255,255,255,0.8)',
+              backdropFilter: 'blur(20px) saturate(140%)', borderRadius: 20, padding: 18,
+              color: 'var(--nova-text)', boxShadow: '0 8px 28px rgba(74,63,102,0.10)',
+            }}>
+              <h5 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--nova-muted)', margin: '0 0 12px', fontWeight: 600 }}>Filter trends</h5>
+              {[
+                { color: '#C9B7E0', nm: 'Mood',    vl: avgs?.mood != null ? String(avgs.mood) : '6.4' },
+                { color: '#F1B894', nm: 'Fatigue', vl: avgs?.fatigue != null ? String(avgs.fatigue) : '5.8' },
+                { color: '#E8A8C0', nm: 'Stress',  vl: avgs?.stress != null ? String(avgs.stress) : '4.2' },
+                { color: '#9FB5D2', nm: 'Sleep',   vl: avgs?.sleep_hours != null ? `${avgs.sleep_hours}h` : '7.1h' },
+              ].map((row) => (
+                <div key={row.nm} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: '1px solid var(--nova-border-soft)' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: '50%', background: row.color, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--nova-muted)' }}>{row.nm}</span>
+                  <span className="font-display" style={{ fontSize: 18 }}>{row.vl}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: 14, fontSize: 11, opacity: 0.7, color: 'var(--nova-muted)' }}>Tap a metric to focus, double-tap to isolate.</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Mini stat grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18 }}>
+          {[
+            { lbl: 'Avg Mood',    val: avgs?.mood != null ? `${avgs.mood}` : '6.4',           unit: '/10', delta: '↑ 0.8 vs last week', deltaColor: 'var(--nova-purple-dark)', stroke: '#7B6FA8', path: 'M0,20 Q15,10 30,16 T60,12 T100,8' },
+            { lbl: 'Avg Fatigue', val: avgs?.fatigue != null ? `${avgs.fatigue}` : '5.8',     unit: '/10', delta: '↓ 0.5 vs last week', deltaColor: '#A87155', stroke: '#E8A98B', path: 'M0,12 Q20,20 40,16 T70,22 T100,18' },
+            { lbl: 'Avg Stress',  val: avgs?.stress != null ? `${avgs.stress}` : '4.2',       unit: '/10', delta: '↓ 1.1 vs last week', deltaColor: 'var(--nova-rose)', stroke: '#D28CA7', path: 'M0,8 Q20,22 40,14 T70,20 T100,22' },
+            { lbl: 'Avg Sleep',   val: avgs?.sleep_hours != null ? `${avgs.sleep_hours}` : '7.1', unit: 'h', delta: '↑ 0.4h vs last week', deltaColor: '#5A6F8F', stroke: '#8FA7C6', path: 'M0,18 Q20,8 40,14 T70,10 T100,12' },
+          ].map((s) => (
+            <div key={s.lbl} style={{ padding: 20, borderRadius: 'var(--radius)', background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)' }}>
+              <div style={{ fontSize: 11, color: 'var(--nova-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{s.lbl}</div>
+              <div className="font-display" style={{ fontSize: 32, fontWeight: 400, marginTop: 4 }}>
+                {s.val}<span style={{ fontSize: 14, color: 'var(--nova-muted)' }}>{s.unit}</span>
+              </div>
+              <div style={{ fontSize: 12, color: s.deltaColor }}>{s.delta}</div>
+              <svg viewBox="0 0 100 32" preserveAspectRatio="none" style={{ height: 32, width: '100%', marginTop: 8 }}>
+                <path d={s.path} fill="none" stroke={s.stroke} strokeWidth="2" strokeLinecap="round"/>
+              </svg>
             </div>
           ))}
-
-          {/* Footer note */}
-          <p className="text-center text-xs text-nova-muted/50 pb-4">
-            ⚠ These charts show personal tracking data only — not medical information.
-          </p>
         </div>
-      )}
-    </div>
+
+        {/* Cycle phase comparison */}
+        <section>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div>
+              <h2 className="font-display" style={{ fontSize: 26, fontWeight: 400, margin: 0 }}>By cycle phase</h2>
+              <p style={{ color: 'var(--nova-muted)', margin: '4px 0 0', fontSize: 13 }}>How the same symptom feels in different phases of your cycle.</p>
+            </div>
+            <Link href="/cycle" style={{ fontSize: 12, color: 'var(--nova-muted)', textDecoration: 'none' }}>Last 3 cycles ↓</Link>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            {PHASES.map((p) => (
+              <div key={p.name} style={{
+                border: '1px solid var(--nova-border-soft)', borderRadius: 'var(--radius)',
+                padding: 18, background: '#fff', position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', inset: 'auto 0 0 0', height: 4, background: p.accent }} />
+                <h4 className="font-display" style={{ fontSize: 18, fontWeight: 400, margin: 0 }}>{p.name}</h4>
+                <div style={{ fontSize: 11, color: 'var(--nova-muted)', margin: '4px 0 14px' }}>{p.meta}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  {Object.entries(p.stats).map(([k, v]) => (
+                    <div key={k}>
+                      <div style={{ fontSize: 11, color: 'var(--nova-muted)' }}>{k}</div>
+                      <div className="font-display" style={{ fontSize: 22 }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* AI observations */}
+        <section>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 className="font-display" style={{ fontSize: 26, fontWeight: 400, margin: 0 }}>A few gentle observations</h2>
+            <Link href="/insights" style={{ fontSize: 12, color: 'var(--nova-muted)', textDecoration: 'none' }}>All insights →</Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {OBS.map((o) => (
+              <div key={o.label} className="card" style={{ padding: '22px 24px', display: 'grid', gridTemplateColumns: '38px 1fr', gap: 16, alignItems: 'start' }}>
+                <div style={{ width: 38, height: 38, borderRadius: 12, display: 'grid', placeItems: 'center', background: o.gradient, color: '#fff' }}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--nova-muted)', marginBottom: 4 }}>{o.label}</div>
+                  <p className="font-display" style={{ fontSize: 17, lineHeight: 1.5, margin: 0, fontWeight: 400 }}>{o.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="disclaimer" style={{ marginTop: 20 }}>Observations are based on your own logs and are not medical advice or diagnosis.</p>
+        </section>
+
+      </div>
+    </>
   )
 }

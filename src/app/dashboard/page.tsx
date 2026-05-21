@@ -1,4 +1,3 @@
-// src/app/dashboard/page.tsx  (POLISHED — hero bg, proportions, SVG icons)
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -12,62 +11,24 @@ import {
 } from 'recharts'
 import type { SymptomAvgRow } from '@/types/database'
 
-function getGreeting(): string {
+function getGreeting() {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
   if (h < 17) return 'Good afternoon'
   return 'Good evening'
 }
 
-// ── SVG icons for symptom glance cards ───────────────────────────────────────
-const GlanceIcons = {
-  mood: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-      <circle cx="10" cy="10" r="8"/>
-      <path d="M7 12s1 1.5 3 1.5 3-1.5 3-1.5"/>
-      <circle cx="7.5" cy="8.5" r="1" fill="currentColor" stroke="none"/>
-      <circle cx="12.5" cy="8.5" r="1" fill="currentColor" stroke="none"/>
-    </svg>
-  ),
-  energy: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-      <polygon points="11,2 4,11 10,11 9,18 16,9 10,9"/>
-    </svg>
-  ),
-  sleep: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-      <path d="M17 14A8 8 0 0 1 6 3a8 8 0 1 0 11 11z"/>
-    </svg>
-  ),
-  cycle: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
-      <path d="M10 3 C6 3 3 6 3 10 C3 14 6 17 10 17"/>
-      <path d="M10 17 C14 17 17 14 17 10 C17 6 14 3 10 3"/>
-      <path d="M10 6 L10 10 L13 13"/>
-    </svg>
-  ),
+function getDayLabel() {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 }
 
-// ── Tiny sparkline ────────────────────────────────────────────────────────────
-function Spark({ data, dataKey, color }: {
-  data: Record<string, unknown>[]
-  dataKey: string
-  color: string
-}) {
-  if (!data || data.length < 2) return (
-    <p className="text-[10px] text-nova-muted/40 mt-1">No data yet</p>
-  )
-  return (
-    <div className="h-8 w-full mt-1">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
-          <Line type="monotone" dataKey={dataKey} stroke={color}
-                strokeWidth={2} dot={false} connectNulls />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  )
-}
+const MOODS = [
+  { val: 1, label: 'heavy',  bg: 'radial-gradient(circle at 30% 30%, #9B8FB8 0%, #6B5A95 100%)' },
+  { val: 3, label: 'tender', bg: 'radial-gradient(circle at 30% 30%, #B8A5D2 0%, #8A7BA8 100%)' },
+  { val: 5, label: 'okay',   bg: 'radial-gradient(circle at 30% 30%, #E8C9D4 0%, #D28CA7 100%)' },
+  { val: 7, label: 'easy',   bg: 'radial-gradient(circle at 30% 30%, #F4D6BD 0%, #E8A98B 100%)' },
+  { val: 9, label: 'bright', bg: 'radial-gradient(circle at 30% 30%, #FFE4B8 0%, #F0B570 100%)' },
+]
 
 export default function DashboardPage() {
   const [firstName, setFirstName]     = useState('Nova')
@@ -76,8 +37,10 @@ export default function DashboardPage() {
   const [daysLogged, setDaysLogged]   = useState(0)
   const [consistency, setConsistency] = useState(0)
   const [recentData, setRecentData]   = useState<Record<string, unknown>[]>([])
-  const [liked, setLiked]             = useState(false)
   const [loading, setLoading]         = useState(true)
+  const [selectedMood, setSelectedMood] = useState(7)
+  const [showDetail, setShowDetail]   = useState(false)
+  const [saved, setSaved]             = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -85,8 +48,7 @@ export default function DashboardPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) { setLoading(false); return }
 
-      const name = session.user.user_metadata?.full_name
-        ?? session.user.email?.split('@')[0] ?? 'Nova'
+      const name = session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0] ?? 'Nova'
       setFirstName(name.split(' ')[0])
 
       const { data: avg } = await supabase
@@ -98,8 +60,7 @@ export default function DashboardPage() {
         setConsistency(Math.round(((avg.total_days_logged ?? 0) / 30) * 100))
       }
 
-      const ago7 = new Date()
-      ago7.setDate(ago7.getDate() - 7)
+      const ago7 = new Date(); ago7.setDate(ago7.getDate() - 7)
       const { data: recent } = await supabase
         .from('symptoms').select('*')
         .eq('user_id', session.user.id)
@@ -108,9 +69,7 @@ export default function DashboardPage() {
       if (recent) {
         setRecentData(recent.map((r) => ({
           ...r,
-          date: new Date(r.logged_at).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric',
-          }),
+          date: new Date(r.logged_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         })))
       }
 
@@ -120,9 +79,9 @@ export default function DashboardPage() {
         .order('logged_at', { ascending: false }).limit(60)
       if (sd?.length) {
         let count = 0
-        const today = new Date(); today.setHours(0,0,0,0)
+        const today = new Date(); today.setHours(0, 0, 0, 0)
         for (let i = 0; i < sd.length; i++) {
-          const d = new Date(sd[i].logged_at); d.setHours(0,0,0,0)
+          const d = new Date(sd[i].logged_at); d.setHours(0, 0, 0, 0)
           const exp = new Date(today); exp.setDate(today.getDate() - i)
           if (d.getTime() === exp.getTime()) count++; else break
         }
@@ -133,331 +92,380 @@ export default function DashboardPage() {
     load()
   }, [])
 
+  function handleSave() {
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2200)
+  }
+
   return (
     <div className="min-h-screen -mx-5 -mt-6 md:-mx-7 md:-mt-7">
 
-      {/* ── Hero header with desert-dunes bg image ──────────────────────── */}
-      <div className="relative overflow-hidden px-6 pt-8 pb-36 md:px-8">
-        {/* Background image */}
-        <Image
-          src="/images/desert-dunes.png"
-          alt="Desert dunes background"
-          fill
-          className="object-cover object-center"
-          style={{ filter: 'brightness(0.7) saturate(0.85)' }}
-          priority
-        />
-        {/* Gradient overlay — fades to dashboard bg color at bottom */}
-        <div className="absolute inset-0"
-             style={{
-               background: 'linear-gradient(to bottom, rgba(100,80,130,0.35) 0%, rgba(239,232,225,0.95) 85%, #EFE8E1 100%)',
-             }} />
+      {/* ── Greeting card ──────────────────────────────────────────────────── */}
+      <div className="sunset-horizon grain relative overflow-hidden px-7 pt-8 pb-10 min-h-[200px]" style={{ marginBottom: 24 }}>
+        <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(160deg, rgba(74,63,102,0.65) 0%, rgba(123,111,168,0.28) 50%, transparent 100%)' }} />
+        <span className="orb orb-pink animate-float" style={{ width: 70, height: 70, top: '20%', right: '38%', zIndex: 2 }} />
+        <span className="orb orb-peach animate-float delay-2" style={{ width: 48, height: 48, bottom: '22%', right: '26%', zIndex: 2 }} />
 
-        {/* Content */}
-        <div className="relative z-10 flex items-start justify-between max-w-7xl mx-auto">
+        <div className="relative z-10 grid gap-7 items-center max-w-6xl mx-auto"
+             style={{ gridTemplateColumns: '1.3fr 1fr' }}>
           <div>
-            <h1 className="font-display text-3xl md:text-4xl text-nova-text font-semibold drop-shadow-sm">
-              {getGreeting()}, {firstName} ✦
+            <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.75)' }}>{getDayLabel()}</div>
+            <h1 className="mt-2.5 flex items-center gap-3 flex-wrap"
+                style={{ color: '#fff', fontSize: 'clamp(30px, 3.4vw, 44px)', fontWeight: 400, letterSpacing: '-0.02em' }}>
+              {getGreeting()}, <em style={{ fontStyle: 'italic' }}>{firstName}</em>
+              <span style={{ color: '#FFD68A', filter: 'drop-shadow(0 0 12px rgba(255,214,138,0.6))', fontSize: 24 }}>✦</span>
             </h1>
-            <p className="text-nova-muted text-sm mt-1">
-              Let's take care of you today.
+            <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.88)', fontSize: 15, maxWidth: '48ch' }}>
+              Let&apos;s take care of your today. Five symptoms logged this week — a gentle rhythm.
             </p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+              <a href="#log" className="btn-ghost">Log today</a>
+              <Link href="/today" className="btn-ghost">Open today&apos;s ritual →</Link>
+            </div>
           </div>
-          <Link href="/journal"
-                className="hidden md:flex items-center gap-2 bg-nova-purple text-white
-                           text-sm font-semibold px-5 py-3 rounded-2xl shadow-nova
-                           hover:bg-nova-purple-dark transition-colors">
-            ✏️ New Journal Entry
-          </Link>
+          <div className="flex items-center justify-center">
+            {/* Capsule insight widget */}
+            <div className="glass rounded-3xl p-5 w-full max-w-xs" style={{ background: 'rgba(253,250,247,0.18)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+              <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>Today</div>
+              <p className="font-display" style={{ color: '#fff', fontSize: 18, fontWeight: 400, lineHeight: 1.3, margin: 0 }}>Soft consistency.</p>
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
+                Five check-ins this week, mood steady around <span className="hl-peach">7</span>. Sleep is the{' '}
+                <span className="hl-rose">lever to lean on</span> next.
+              </p>
+              <p className="disclaimer" style={{ color: 'rgba(255,255,255,0.45)', marginTop: 10 }}>Educational only — not medical advice.</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Cards — pulled UP over the faded image ──────────────────────── */}
-      <div className="-mt-28 relative z-10 px-5 md:px-7 pb-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* ── Two-column layout ──────────────────────────────────────────────── */}
+      <div className="px-5 md:px-7 pb-10 max-w-6xl mx-auto"
+           style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1fr)', gap: 22, alignItems: 'start' }}>
 
-          {/* ── COL 1: Daily Symptom Log ────────────────────────────────── */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl shadow-nova-sm
-                            border border-nova-border/15 p-5 h-full">
-              <div className="flex items-center justify-between mb-0.5">
-                <h2 className="font-display text-lg font-semibold text-nova-text">
-                  Daily Symptom Log
-                </h2>
-                <span className="text-xs text-nova-muted bg-nova-bg/80 px-3 py-1.5
-                                 rounded-full border border-nova-border/30 flex items-center gap-1">
-                  📅 {new Date().toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric'
-                  })}
-                </span>
+        {/* ── LEFT column ─────────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+          {/* Quick Log */}
+          <section id="log" className="relative overflow-hidden rounded-[var(--radius-lg)]" style={{
+            padding: '28px 28px 24px',
+            background: 'linear-gradient(160deg, rgba(255,240,220,0.55), rgba(232,168,200,0.30)), var(--nova-card-2)',
+            border: '1px solid rgba(255,255,255,0.9)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+              <div>
+                <h3 className="font-display" style={{ fontSize: 24, fontWeight: 400, margin: 0 }}>
+                  How are you <em style={{ fontStyle: 'italic', color: 'var(--nova-purple-dark)' }}>arriving</em> today?
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--nova-muted)', marginTop: 4 }}>One tap is enough. We&apos;ll learn the rest.</p>
               </div>
-              <p className="text-xs text-nova-muted mb-4">
-                Track how you're feeling today
-              </p>
-              <SymptomForm />
             </div>
-          </div>
 
-          {/* ── COL 2: Glance + Cycle Phase ─────────────────────────────── */}
-          <div className="lg:col-span-1 space-y-4">
-
-            {/* Today at a glance */}
-            <div className="bg-white rounded-3xl shadow-nova-sm border border-nova-border/15 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-lg font-semibold text-nova-text">
-                  Today at a glance
-                </h2>
-                <Link href="/analytics"
-                      className="text-xs text-nova-purple font-semibold hover:underline">
-                  View all →
-                </Link>
-              </div>
-
-              {loading ? (
-                <div className="grid grid-cols-2 gap-3 animate-pulse">
-                  {[1,2,3,4].map((i) => (
-                    <div key={i} className="rounded-2xl p-3 h-28 bg-nova-bg" />
-                  ))}
+            {/* Mood orbs */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', marginBottom: 18 }}>
+              {MOODS.map((m) => (
+                <div key={m.val} onClick={() => setSelectedMood(m.val)}
+                     style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: '50%',
+                    background: m.bg,
+                    border: selectedMood === m.val ? '2.5px solid var(--nova-purple)' : '2.5px solid rgba(255,255,255,0.6)',
+                    boxShadow: selectedMood === m.val
+                      ? '0 0 24px rgba(123,111,168,0.4), 0 0 0 3px rgba(255,255,255,0.8)'
+                      : '0 6px 16px rgba(123,111,168,0.18)',
+                    transform: selectedMood === m.val ? 'scale(1.14)' : 'scale(1)',
+                    transition: 'all .2s ease',
+                  }} />
+                  <div style={{
+                    fontSize: 11, textAlign: 'center',
+                    color: selectedMood === m.val ? 'var(--nova-text)' : 'var(--nova-muted)',
+                    fontWeight: selectedMood === m.val ? 600 : 400,
+                  }}>{m.label}</div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: 'Mood',     key: 'mood',        val: averages?.avg_mood,       unit: '/10', color: '#7B6FA8', bg: 'bg-nova-purple/10', iconColor: 'text-nova-purple',  icon: GlanceIcons.mood   },
-                    { label: 'Energy',   key: 'fatigue',     val: averages?.avg_fatigue,    unit: '%',   color: '#E8A98B', bg: 'bg-nova-peach/20',  iconColor: 'text-nova-peach',   icon: GlanceIcons.energy },
-                    { label: 'Sleep',    key: 'sleep_hours', val: averages?.avg_sleep_hours,unit: 'hrs', color: '#8FA7C6', bg: 'bg-nova-sky/20',    iconColor: 'text-nova-sky',     icon: GlanceIcons.sleep  },
-                    { label: 'Cycle Day',key: 'stress',      val: averages?.avg_stress,     unit: '',    color: '#D28CA7', bg: 'bg-nova-rose/15',   iconColor: 'text-nova-rose',    icon: GlanceIcons.cycle  },
-                  ].map((item) => (
-                    <div key={item.label}
-                         className={`${item.bg} rounded-2xl p-4 border border-white/50`}>
-                      <div className={`flex items-center gap-1.5 mb-2 ${item.iconColor}`}>
-                        {item.icon}
-                        <span className="text-xs font-semibold text-nova-muted">
-                          {item.label}
-                        </span>
-                      </div>
-                      <p className="font-display text-2xl font-semibold"
-                         style={{ color: item.color }}>
-                        {item.val ?? '—'}
-                        <span className="text-xs text-nova-muted font-sans font-normal ml-0.5">
-                          {item.unit}
-                        </span>
-                      </p>
-                      <Spark data={recentData} dataKey={item.key} color={item.color} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Cycle Phase with image */}
-            <div className="rounded-3xl shadow-nova-sm border border-nova-border/15 overflow-hidden">
-              <div className="relative h-44">
-                <Image src="/images/sunset-mountains.png" alt="Cycle phase" fill
-                       className="object-cover"
-                       style={{ filter: 'brightness(0.72) saturate(0.9)' }} />
-                <div className="absolute inset-0"
-                     style={{ background: 'linear-gradient(160deg,rgba(100,80,150,0.5) 0%,rgba(200,120,150,0.3) 100%)' }} />
-                <div className="relative z-10 p-5 h-full flex flex-col justify-between">
-                  <div>
-                    <p className="text-white/75 text-xs font-medium mb-1">Cycle Phase</p>
-                    <p className="font-display text-2xl font-semibold text-white">
-                      Follicular Phase
-                    </p>
-                    <p className="text-white/70 text-xs mt-1">Day 8 of 28</p>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-white/60 text-[10px] mb-1.5">
-                      <span>Progress</span><span>28%</span>
-                    </div>
-                    <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-white/75" style={{ width: '28%' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-4 border-t border-nova-border/15">
-                <p className="text-xs text-nova-purple font-semibold mb-1">💡 Today's tip</p>
-                <p className="text-xs text-nova-muted leading-relaxed">
-                  Gentle movement and protein-rich meals can support stable energy
-                  throughout your cycle.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── COL 3: AI Insight + Quote + Journey ─────────────────────── */}
-          <div className="lg:col-span-1 space-y-4">
-
-            {/* AI Insight — with colored button box */}
-            <div className="bg-white rounded-3xl shadow-nova-sm border border-nova-border/15 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-display text-lg font-semibold text-nova-text">
-                  AI Insight
-                </h2>
-                <Link href="/insights"
-                      className="text-xs text-nova-purple font-semibold hover:underline">
-                  View all →
-                </Link>
-              </div>
-              <p className="text-nova-muted text-sm leading-relaxed mb-4">
-                Your sleep quality tends to improve during your follicular phase.
-                You also experience{' '}
-                <strong className="text-nova-text font-semibold">
-                  higher energy levels
-                </strong>{' '}
-                on days you exercise.
-              </p>
-              {/* Colored button — was missing */}
-              <Link href="/insights"
-                    className="flex items-center justify-center gap-1.5 text-xs
-                               bg-nova-purple/12 text-nova-purple font-semibold
-                               px-4 py-2.5 rounded-xl w-full
-                               hover:bg-nova-purple/20 transition-colors border
-                               border-nova-purple/20">
-                See full analysis →
-              </Link>
-              <p className="text-[10px] text-nova-muted/40 italic mt-3">
-                ⚠ This is not medical advice
-              </p>
-            </div>
-
-            {/* You've got this — sunset-clouds bg */}
-            <div className="rounded-3xl shadow-nova-sm border border-nova-border/15
-                            overflow-hidden relative h-44">
-              <Image src="/images/sunset-clouds.png" alt="Quote background" fill
-                     className="object-cover"
-                     style={{ filter: 'brightness(0.78) saturate(0.8)' }} />
-              <div className="absolute inset-0"
-                   style={{ background: 'linear-gradient(160deg,rgba(239,230,223,0.65) 0%,rgba(232,169,139,0.45) 100%)' }} />
-              <div className="relative z-10 p-5 h-full flex flex-col justify-between">
-                <div className="flex items-start justify-between">
-                  <span className="font-display text-3xl text-nova-muted/50 leading-none">❝</span>
-                  {/* Heart — more visible rose when liked */}
-                  <button
-                    onClick={() => setLiked(!liked)}
-                    className="transition-all duration-200 p-1"
-                    aria-label="Like quote"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill={liked ? '#D28CA7' : 'none'}
-                         stroke={liked ? '#D28CA7' : '#6F6A66'} strokeWidth="2">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                    </svg>
-                  </button>
-                </div>
-                <div>
-                  <p className="font-display text-lg font-semibold text-nova-text leading-snug">
-                    Small, consistent choices create powerful changes.
-                  </p>
-                  <p className="text-xs text-nova-muted font-medium mt-2">
-                    You've got this ✦
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Your Journey */}
-            <div className="bg-white rounded-3xl shadow-nova-sm border border-nova-border/15 p-5">
-              <h2 className="font-display text-lg font-semibold text-nova-text mb-4">
-                Your Journey
-              </h2>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: 'Days logged',    val: daysLogged,      icon: '📅', color: 'text-nova-sky',    bg: 'bg-nova-sky/15'    },
-                  { label: 'Current streak', val: streak,           icon: '🔥', color: 'text-nova-peach',  bg: 'bg-nova-peach/20'  },
-                  { label: 'Consistency',    val: `${consistency}%`,icon: '⭐', color: 'text-nova-purple', bg: 'bg-nova-purple/10' },
-                ].map((stat) => (
-                  <div key={stat.label}
-                       className={`${stat.bg} rounded-2xl p-3 text-center border border-white/60`}>
-                    <p className="text-xl mb-1">{stat.icon}</p>
-                    <p className={`font-display text-xl font-semibold ${stat.color}`}>
-                      {stat.val}
-                    </p>
-                    <p className="text-[10px] text-nova-muted leading-tight mt-0.5">
-                      {stat.label}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Symptom Trends ──────────────────────────────────────────────── */}
-        <div className="mt-4 bg-white rounded-3xl shadow-nova-sm
-                        border border-nova-border/15 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-display text-lg font-semibold text-nova-text">
-                Symptom Trends
-              </h2>
-              <p className="text-xs text-nova-muted mt-0.5">Last 7 days</p>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-nova-muted">
-              {[
-                { label: 'Mood',    color: '#7B6FA8' },
-                { label: 'Fatigue', color: '#E8A98B' },
-                { label: 'Stress',  color: '#D28CA7' },
-              ].map((l) => (
-                <span key={l.label} className="flex items-center gap-1.5">
-                  <span className="w-4 h-0.5 rounded inline-block"
-                        style={{ background: l.color }} />
-                  {l.label}
-                </span>
               ))}
             </div>
-          </div>
 
-          {recentData.length < 3 ? (
-            <div className="h-48 flex flex-col items-center justify-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-nova-purple/10 flex items-center
-                              justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#7B6FA8" strokeWidth="1.8"
-                     className="w-7 h-7">
-                  <polyline points="3,17 9,11 13,15 21,7"/>
-                  <polyline points="14,7 21,7 21,14"/>
+            {/* Shortcuts */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginTop: 6 }}>
+              {[
+                { icon: '↻', label: 'Same as yesterday' },
+                { icon: '✕', label: 'Skip today' },
+              ].map((s) => (
+                <button key={s.label} style={{
+                  background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.95)',
+                  padding: '8px 14px', borderRadius: 999, fontSize: 12, color: 'var(--nova-text)',
+                  cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                  <span style={{ color: 'var(--nova-purple-dark)' }}>{s.icon}</span> {s.label}
+                </button>
+              ))}
+              <Link href="/today" style={{
+                background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.95)',
+                padding: '8px 14px', borderRadius: 999, fontSize: 12, color: 'var(--nova-text)',
+                display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none',
+              }}>
+                <span style={{ color: 'var(--nova-purple-dark)' }}>→</span> Open today&apos;s ritual
+              </Link>
+            </div>
+
+            {/* Auto-sync strip */}
+            <div style={{
+              marginTop: 16, padding: '18px 22px',
+              background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.9)',
+              borderRadius: 18, display: 'grid', gridTemplateColumns: '32px 1fr auto',
+              gap: 14, alignItems: 'center', backdropFilter: 'blur(10px)',
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: 'linear-gradient(135deg, #1a1422, #5a4a6e)',
+                color: '#F4D6BD', display: 'grid', placeItems: 'center',
+              }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2h6M9 22h6"/>
                 </svg>
               </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-nova-text">
-                  Your trends are on their way!
-                </p>
-                <p className="text-xs text-nova-muted mt-1 max-w-xs leading-relaxed">
-                  Log symptoms for at least 3 days to see your trend chart.
-                  You've logged{' '}
-                  <span className="font-semibold text-nova-purple">
-                    {recentData.length} {recentData.length === 1 ? 'day' : 'days'}
-                  </span>{' '}
-                  so far.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {[0,1,2].map((i) => (
-                  <div key={i} className={`w-2 h-2 rounded-full transition-colors ${
-                    i < recentData.length ? 'bg-nova-purple' : 'bg-nova-border'
-                  }`} />
+              <div style={{ display: 'flex', gap: 18, fontSize: 13 }}>
+                {[['Sleep', '6h 42m'], ['HRV', '48 ms'], ['Steps', '4,287'], ['Resting HR', '64 bpm']].map(([lbl, val]) => (
+                  <div key={lbl}>
+                    <div style={{ fontSize: 10, color: 'var(--nova-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{lbl}</div>
+                    <div className="font-display" style={{ fontSize: 17, fontWeight: 400, color: 'var(--nova-text)' }}>{val}</div>
+                  </div>
                 ))}
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="animate-pulse-glow" style={{
+                  width: 8, height: 8, borderRadius: '50%', background: '#5BC287',
+                  display: 'inline-block',
+                }} />
+                <span style={{ fontSize: 11, color: 'var(--nova-muted)', letterSpacing: '0.04em' }}>Apple Watch</span>
+              </div>
             </div>
-          ) : (
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={recentData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#DDD4CA" strokeOpacity={0.4} vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6F6A66' }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0,10]} tick={{ fontSize: 10, fill: '#6F6A66' }} tickLine={false} axisLine={false} tickCount={5} />
-                  <Tooltip contentStyle={{ background: '#FDFAF7', border: '1px solid #DDD4CA', borderRadius: '12px', fontSize: '12px' }} />
-                  <Line type="monotone" dataKey="mood" stroke="#7B6FA8" strokeWidth={2.5} dot={{ r: 4, fill: '#7B6FA8', strokeWidth: 0 }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} connectNulls />
-                  <Line type="monotone" dataKey="fatigue" stroke="#E8A98B" strokeWidth={2.5} dot={{ r: 4, fill: '#E8A98B', strokeWidth: 0 }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} connectNulls />
-                  <Line type="monotone" dataKey="stress" stroke="#D28CA7" strokeWidth={2.5} dot={{ r: 4, fill: '#D28CA7', strokeWidth: 0 }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} connectNulls />
-                </LineChart>
-              </ResponsiveContainer>
+
+            {/* Save + toggle */}
+            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+              <button onClick={handleSave} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: 14 }}>
+                {saved ? '✓ Saved ✿' : '♡ Save today'}
+              </button>
+              <button onClick={() => setShowDetail(!showDetail)} className="btn-soft" style={{ whiteSpace: 'nowrap' }}>
+                {showDetail ? 'Hide details ↑' : 'Add more details →'}
+              </button>
             </div>
-          )}
-          <p className="text-center text-[10px] text-nova-muted/40 mt-3">
-            ⚠ This is not medical advice
-          </p>
+
+            {/* Collapsible detail log */}
+            {showDetail && (
+              <div className="animate-fade-up" style={{ marginTop: 26, paddingTop: 22, borderTop: '1px solid var(--nova-border-soft)' }}>
+                <h3 className="font-display" style={{ fontSize: 18, margin: '0 0 4px' }}>Detailed log</h3>
+                <p style={{ fontSize: 13, color: 'var(--nova-muted)', marginBottom: 18 }}>Slide each one to rate. Skip what doesn&apos;t apply.</p>
+                <SymptomForm />
+              </div>
+            )}
+          </section>
+
+          {/* Trend chart with sunset-water background */}
+          <section className="card relative overflow-hidden" style={{ padding: 24 }}>
+            <div className="absolute inset-0 z-0">
+              <Image src="/images/sunset-water.jpg" alt="" fill className="object-cover object-center" style={{ opacity: 0.92 }} />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(74,63,102,0.10) 0%, rgba(255,251,245,0.05) 50%, rgba(255,251,245,0.20) 100%)' }} />
+            </div>
+            <div className="relative z-10">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <div>
+                  <h3 className="font-display" style={{ color: '#fff', textShadow: '0 1px 6px rgba(74,63,102,0.4)', fontSize: 22, fontWeight: 400, margin: 0 }}>Symptom Trends</h3>
+                  <p style={{ color: 'rgba(255,252,247,0.9)', textShadow: '0 1px 4px rgba(74,63,102,0.3)', fontSize: 13, margin: '4px 0 0' }}>Past 7 days</p>
+                </div>
+                <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
+                  {[['Mood','#7B6FA8'],['Fatigue','#E8A98B'],['Stress','#D28CA7']].map(([l,c]) => (
+                    <span key={l} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,252,247,0.95)', textShadow: '0 1px 4px rgba(74,63,102,0.3)', fontWeight: 500 }}>
+                      <i style={{ width: 8, height: 8, borderRadius: '50%', background: c, display: 'inline-block' }} />{l}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div style={{
+                background: 'rgba(253,248,238,0.75)', backdropFilter: 'blur(22px) saturate(160%)',
+                border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14,
+                padding: '16px 14px 4px',
+                boxShadow: '0 6px 20px rgba(74,63,102,0.10), inset 0 1px 0 rgba(255,255,255,0.4)',
+              }}>
+                {recentData.length < 3 ? (
+                  <div style={{ height: 190, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <p style={{ fontSize: 13, color: 'var(--nova-purple)', fontWeight: 600 }}>Log {3 - recentData.length} more day{3 - recentData.length !== 1 ? 's' : ''} to see your trends</p>
+                    <p style={{ fontSize: 12, color: 'var(--nova-muted)', textAlign: 'center' }}>{recentData.length} of 3 days logged this week</p>
+                  </div>
+                ) : (
+                  <div style={{ height: 190 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={recentData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="rgba(74,63,102,0.20)" vertical={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 11.5, fill: 'rgb(74,63,102)', fontWeight: 500 }} tickLine={false} axisLine={false} />
+                        <YAxis domain={[0,10]} tick={{ fontSize: 11, fill: 'rgb(74,63,102)' }} tickLine={false} axisLine={false} tickCount={5} />
+                        <Tooltip contentStyle={{ background: '#FDFAF7', border: '1px solid #DDD4CA', borderRadius: 12, fontSize: 12 }} />
+                        <Line type="monotone" dataKey="mood" stroke="#7B6FA8" strokeWidth={2.5} dot={{ r: 3.5, fill: '#7B6FA8', strokeWidth: 0 }} connectNulls />
+                        <Line type="monotone" dataKey="fatigue" stroke="#E8A98B" strokeWidth={2.5} dot={{ r: 3.5, fill: '#E8A98B', strokeWidth: 0 }} connectNulls />
+                        <Line type="monotone" dataKey="stress" stroke="#D28CA7" strokeWidth={2.5} dot={{ r: 3.5, fill: '#D28CA7', strokeWidth: 0 }} connectNulls />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 4px 4px', fontSize: 11.5, color: 'rgb(74,63,102)', fontWeight: 500, letterSpacing: '0.02em' }}>
+                  {recentData.slice(-7).map((d) => <span key={String(d.date)}>{String(d.date)}</span>)}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* ── RIGHT column ────────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+          {/* Today at a glance */}
+          <section className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 className="font-display" style={{ fontSize: 22, fontWeight: 400, margin: 0 }}>Today at a glance</h3>
+              <Link href="/analytics" style={{ fontSize: 12, color: 'var(--nova-muted)' }}>View all →</Link>
+            </div>
+            {loading ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {[1,2,3,4].map((i) => <div key={i} style={{ borderRadius: 18, height: 96, background: 'var(--nova-card)' }} />)}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {[
+                  { label: 'Mood',   val: averages?.avg_mood ?? '—',        unit: '/10', color: '#7B6FA8', bg: '#EAE0F2', delta: '↑ 1 from yesterday', deltaColor: 'var(--nova-purple-dark)',
+                    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg> },
+                  { label: 'Energy', val: averages?.avg_fatigue ?? '—',     unit: '%',   color: '#A87155', bg: '#F1D7C5', delta: '↓ 4 from yesterday', deltaColor: '#A87155',
+                    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m13 2-9 12h7l-1 8 9-12h-7z"/></svg> },
+                  { label: 'Sleep',  val: averages?.avg_sleep_hours ?? '—', unit: 'h',   color: '#5A6F8F', bg: '#D9E0EC', delta: '→ Steady', deltaColor: '#5A6F8F',
+                    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg> },
+                  { label: 'Cycle',  val: 'Day 8', unit: '',               color: '#A85A75', bg: '#F1D5DE', delta: 'Follicular', deltaColor: 'var(--nova-rose)',
+                    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg> },
+                ].map((item) => (
+                  <div key={item.label} style={{
+                    borderRadius: 18, padding: 16, border: '1px solid var(--nova-border-soft)',
+                    background: '#fff', position: 'relative',
+                  }}>
+                    <div style={{ fontSize: 11, color: 'var(--nova-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{item.label}</div>
+                    <div className="font-display" style={{ fontSize: 32, fontWeight: 400, marginTop: 4, color: item.color }}>
+                      {item.val}<span style={{ fontSize: 14, color: 'var(--nova-muted)' }}>{item.unit}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: item.deltaColor }}>{item.delta}</div>
+                    <div style={{
+                      position: 'absolute', top: 14, right: 14,
+                      width: 32, height: 32, borderRadius: 10,
+                      background: item.bg, color: item.color,
+                      display: 'grid', placeItems: 'center',
+                    }}>{item.icon}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* AI Insight — dark purple gradient */}
+          <section style={{
+            background: 'linear-gradient(160deg, #2D2538 0%, #4A3F66 60%, #6B5687 100%)',
+            color: '#fff', borderRadius: 'var(--radius-lg)', padding: 24,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', width: 260, height: 260, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(232,169,139,0.45), transparent 70%)',
+              top: -120, right: -100, filter: 'blur(20px)', pointerEvents: 'none',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 2 }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)',
+                padding: '5px 12px', borderRadius: 999, fontSize: 11, backdropFilter: 'blur(8px)',
+              }}>
+                <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>
+                AI insight
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Generated 2h ago</span>
+            </div>
+            <h3 className="font-display" style={{ color: '#fff', fontSize: 24, fontWeight: 400, margin: '14px 0 10px', lineHeight: 1.2 }}>
+              Your sleep tends to lift on days you exercise.
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 1.6, margin: '0 0 8px' }}>
+              This week, sleep quality was <span className="hl-rose">1.6 points higher</span> on days with logged movement. Energy also rose during your <span className="hl-peach">follicular phase</span> — a pattern Novana has seen for three cycles now.
+            </p>
+            <p style={{ fontSize: 11, opacity: 0.55, marginTop: 8 }}>This is not medical advice.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, position: 'relative', zIndex: 2 }}>
+              <Link href="/insights" style={{
+                background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.22)',
+                color: '#fff', padding: '8px 14px', borderRadius: 999, fontSize: 13,
+                fontWeight: 500, textDecoration: 'none',
+              }}>See full analysis →</Link>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>3 of 5 weekly insights</span>
+            </div>
+          </section>
+
+          {/* Cycle phase card */}
+          <section className="card" style={{ padding: 22, display: 'grid', gridTemplateColumns: '1fr 110px', gap: 18, alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--nova-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Cycle Phase</div>
+              <h4 className="font-display" style={{ fontSize: 24, fontWeight: 400, margin: '4px 0 12px' }}>Follicular Phase</h4>
+              <div style={{ fontSize: 13, color: 'var(--nova-muted)', marginBottom: 8 }}>Day 8 of 28</div>
+              <div style={{ height: 6, background: 'var(--nova-border-soft)', borderRadius: 999 }}>
+                <div style={{ height: '100%', width: '28%', background: 'linear-gradient(90deg, var(--nova-purple), var(--nova-rose))', borderRadius: 999 }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: 'var(--nova-muted)' }}>
+                <span>28%</span><span>Next: Ovulatory · in 5d</span>
+              </div>
+            </div>
+            <div style={{
+              width: 100, height: 100, borderRadius: '50%', overflow: 'hidden',
+              border: '4px solid #fff', boxShadow: 'var(--shadow-sm)', position: 'relative',
+            }}>
+              <Image src="/images/sunset-mountains.jpg" alt="Cycle phase" fill className="object-cover" />
+            </div>
+          </section>
+
+          {/* Quote card */}
+          <section className="grain relative overflow-hidden rounded-[var(--radius-lg)]" style={{
+            padding: 28,
+            background: 'radial-gradient(60% 60% at 80% 100%, #FBE2C8 0%, transparent 70%), linear-gradient(160deg, #E8C5D4 0%, #F1B894 100%)',
+          }}>
+            <span className="eyebrow" style={{ color: 'rgba(47,42,40,0.55)' }}>A gentle thought</span>
+            <h3 className="font-display" style={{ fontStyle: 'italic', fontSize: 24, fontWeight: 400, margin: '10px 0 0', lineHeight: 1.3, maxWidth: '22ch' }}>
+              Small, consistent choices create powerful changes.
+            </h3>
+            <div style={{ marginTop: 14, fontSize: 12, color: 'rgba(47,42,40,0.65)', letterSpacing: '0.04em' }}>— a quiet reminder</div>
+          </section>
+
+          {/* Journey */}
+          <section className="card" style={{ padding: 24 }}>
+            <h3 className="font-display" style={{ fontSize: 20, fontWeight: 400, margin: '0 0 12px' }}>Your journey</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              {[
+                { val: daysLogged, label: 'Days logged',    bg: '#EAE0F2', color: 'var(--nova-purple)',
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> },
+                { val: streak,     label: 'Current streak', bg: '#F1D7C5', color: '#A87155',
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.5 0 2.5-1 2.5-2.5 0-2.5-3-3.5-2-6.5-3 1-5 4-5 7a6 6 0 0 0 12 0c0-4-3-7-7-10v3"/></svg> },
+                { val: `${consistency}%`, label: 'Consistency', bg: '#F1D5DE', color: '#A85A75',
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 6.6L21 9l-5 4.5L17.5 21 12 17.4 6.5 21 8 13.5 3 9l6.6-.4z"/></svg> },
+              ].map((s) => (
+                <div key={s.label} style={{
+                  background: '#fff', border: '1px solid var(--nova-border-soft)',
+                  borderRadius: 16, padding: 14, textAlign: 'center',
+                }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 10, background: s.bg, color: s.color,
+                    margin: '0 auto 8px', display: 'grid', placeItems: 'center',
+                  }}>{s.icon}</div>
+                  <div className="font-display" style={{ fontSize: 22, fontWeight: 400, display: 'block' }}>{s.val}</div>
+                  <div style={{ fontSize: 11, color: 'var(--nova-muted)' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 1060px) {
+          .dash-layout { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -141,7 +141,7 @@ export default function AboutPage() {
             <div className="space-y-3 flex-1">
               {/* [PLACEHOLDER] Replace with your name */}
               <h3 className="font-display text-2xl text-nova-text">
-                Rupsaa G.
+                Rupsaa Goswami
               </h3>
 
               {/* [PLACEHOLDER] Replace with your title/role */}

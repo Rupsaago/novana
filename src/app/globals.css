@@ -1,184 +1,300 @@
-/* src/app/globals.css */
-/* ─────────────────────────────────────────────────────────────────────────── */
-/* Tailwind base directives — these MUST be here or Tailwind won't work.      */
-/* ─────────────────────────────────────────────────────────────────────────── */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/* Custom base styles                                                          */
-/* ─────────────────────────────────────────────────────────────────────────── */
-
 @layer base {
   :root {
-    --nova-bg:     #F7F2ED;
-    --nova-card:   #EFE6DF;
+    --nova-bg: #F7F2ED;
+    --nova-card: #EFE6DF;
+    --nova-card-2: #FFFCF7;
     --nova-purple: #7B6FA8;
-    --nova-peach:  #E8A98B;
-    --nova-rose:   #D28CA7;
-    --nova-sky:    #8FA7C6;
-    --nova-text:   #2F2A28;
-    --nova-muted:  #6F6A66;
+    --nova-purple-light: #A89ED0;
+    --nova-purple-dark: #5A5080;
+    --nova-peach: #E8A98B;
+    --nova-rose: #D28CA7;
+    --nova-sky: #8FA7C6;
+    --nova-text: #2F2A28;
+    --nova-muted: #6F6A66;
     --nova-border: #DDD4CA;
+    --nova-border-soft: #E8DACC;
+
+    --shadow-sm: 0 2px 12px rgba(123,111,168,0.10);
+    --shadow:    0 10px 36px rgba(123,111,168,0.14), 0 1px 2px rgba(47,42,40,0.04);
+    --shadow-lg: 0 18px 60px rgba(123,111,168,0.20);
+
+    --radius-sm: 12px;
+    --radius:    20px;
+    --radius-lg: 28px;
+    --radius-xl: 36px;
   }
 
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: #F7F2ED;
+    background-image:
+      radial-gradient(55% 35% at 92% 8%, rgba(232,169,139,0.28) 0%, transparent 60%),
+      radial-gradient(45% 35% at 5% 88%, rgba(168,158,208,0.22) 0%, transparent 65%),
+      radial-gradient(38% 30% at 70% 92%, rgba(210,140,167,0.14) 0%, transparent 60%),
+      radial-gradient(30% 25% at 12% 35%, rgba(143,167,198,0.10) 0%, transparent 60%);
+    background-attachment: fixed;
+    color: var(--nova-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
   }
 
-  /* Base heading styles */
   h1, h2, h3, h4 {
-    font-family: var(--font-fraunces), serif;
+    font-family: var(--font-fraunces), Georgia, serif;
     font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--nova-text);
   }
-
-  /* Focus ring — warm purple instead of the default blue */
-  *:focus-visible {
-    outline: 2px solid #7B6FA8;
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
+  h1 { font-size: clamp(40px, 5.4vw, 72px); line-height: 1.02; letter-spacing: -0.025em; }
+  h2 { font-size: clamp(28px, 3vw, 42px); line-height: 1.1; letter-spacing: -0.02em; }
+  h3 { font-size: 22px; line-height: 1.2; }
 }
+
+/* ---------- Animations ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-12px) rotate(-1deg); }
+  66%       { transform: translateY(-6px) rotate(0.5deg); }
+}
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(8px, -12px) scale(1.03); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(123,111,168,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(123,111,168,0); }
+}
+
+.animate-float      { animation: float 8s ease-in-out infinite; }
+.animate-float-slow { animation: float 10s ease-in-out infinite -2s; }
+.animate-orb-drift  { animation: orb-drift 9s ease-in-out infinite; }
+.animate-fade-up    { animation: fade-up 0.5s ease both; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-out infinite; }
+.delay-2 { animation-delay: -3s; }
+.delay-3 { animation-delay: -6s; }
 
 @layer components {
-  /* ── Button variants ─────────────────────────────────────────────────────── */
-
-  /* Primary button — filled purple */
+  /* --- Buttons --- */
   .btn-primary {
-    @apply bg-nova-purple text-white font-medium px-6 py-3 rounded-2xl
-           shadow-nova-sm hover:bg-nova-purple-dark active:scale-95
-           transition-all duration-200 text-sm tracking-wide;
+    @apply inline-flex items-center justify-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition-all duration-200 active:scale-95 text-white;
+    background: linear-gradient(135deg, #8A7DBC 0%, #7B6FA8 55%, #6B5A95 100%);
+    box-shadow: 0 6px 24px rgba(123,111,168,0.36), inset 0 1px 0 rgba(255,255,255,0.15);
   }
+  .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
-  /* Secondary button — outline */
   .btn-secondary {
-    @apply bg-transparent border border-nova-purple text-nova-purple font-medium
-           px-6 py-3 rounded-2xl hover:bg-nova-purple hover:text-white
-           active:scale-95 transition-all duration-200 text-sm;
+    @apply inline-flex items-center justify-center gap-2 border border-nova-purple text-nova-purple font-medium px-5 py-2.5 rounded-full text-sm hover:bg-nova-purple hover:text-white active:scale-95 transition-all duration-200;
   }
 
-  /* Ghost button — no border */
   .btn-ghost {
-    @apply bg-transparent text-nova-muted font-medium px-4 py-2 rounded-xl
-           hover:bg-nova-card transition-all duration-200 text-sm;
+    @apply inline-flex items-center justify-center gap-2 font-medium px-4 py-2 rounded-full text-sm transition-all duration-200;
+    background: rgba(255,255,255,0.65);
+    color: var(--nova-text);
+    border: 1px solid rgba(255,255,255,0.7);
+    backdrop-filter: blur(14px) saturate(140%);
   }
+  .btn-ghost:hover { background: rgba(255,255,255,0.92); }
 
-  /* ── Card ────────────────────────────────────────────────────────────────── */
+  .btn-soft {
+    @apply inline-flex items-center justify-center gap-2 font-medium px-4 py-2 rounded-full text-sm transition-all duration-200;
+    background: var(--nova-card);
+    color: var(--nova-text);
+    border: 1px solid var(--nova-border-soft);
+  }
+  .btn-soft:hover { background: #ECDDCD; transform: translateY(-1px); }
+
+  /* --- Cards --- */
   .card {
-    @apply bg-nova-white rounded-3xl shadow-nova border border-nova-border/40 p-6;
+    background: var(--nova-card-2);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    position: relative;
+    z-index: 1;
   }
-
+  .card-warm {
+    background: var(--nova-card);
+    border: 1px solid var(--nova-border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
   .card-sm {
-    @apply bg-nova-white rounded-2xl shadow-nova-sm border border-nova-border/40 p-4;
+    @apply rounded-2xl border border-nova-border/40 p-4;
+    background: var(--nova-card-2);
   }
 
-  /* ── Form elements ───────────────────────────────────────────────────────── */
-  .form-label {
-    @apply block text-sm font-medium text-nova-muted mb-2;
+  /* --- Glass --- */
+  .glass {
+    background: rgba(253,250,247,0.55);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  .glass-dark {
+    background: rgba(28,22,38,0.62);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--radius-lg);
+    color: rgba(255,255,255,0.92);
+    box-shadow: 0 18px 60px rgba(28,22,38,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
   }
 
+  /* --- Form inputs --- */
   .form-input {
-    @apply w-full bg-nova-bg border border-nova-border rounded-xl px-4 py-3
-           text-nova-text text-sm placeholder:text-nova-muted/60
-           focus:outline-none focus:border-nova-purple focus:ring-2
-           focus:ring-nova-purple/10 transition-all duration-200;
+    @apply w-full border rounded-xl px-4 py-3 text-sm transition-all duration-200;
+    background: rgba(255,255,255,0.7);
+    border-color: var(--nova-border);
+    color: var(--nova-text);
+  }
+  .form-input::placeholder { color: rgba(111,106,102,0.6); }
+  .form-input:focus { outline: none; border-color: var(--nova-purple); box-shadow: 0 0 0 3px rgba(123,111,168,0.1); }
+
+  .form-label {
+    @apply block text-sm font-medium mb-1.5;
+    color: var(--nova-text);
   }
 
-  .form-select {
-    @apply w-full bg-nova-bg border border-nova-border rounded-xl px-4 py-3
-           text-nova-text text-sm
-           focus:outline-none focus:border-nova-purple focus:ring-2
-           focus:ring-nova-purple/10 transition-all duration-200 appearance-none;
-  }
-
-  /* ── Symptom slider track ─────────────────────────────────────────────────── */
-  .symptom-slider {
-    @apply w-full h-2 rounded-full appearance-none cursor-pointer
-           bg-nova-border accent-nova-purple;
-  }
-
-  /* ── Nav link ────────────────────────────────────────────────────────────── */
+  /* --- Nav --- */
   .nav-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-nova-muted
-           text-sm font-medium hover:bg-nova-card hover:text-nova-text
-           transition-all duration-200;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200;
+    color: var(--nova-muted);
   }
-
+  .nav-link:hover { background: var(--nova-card); color: var(--nova-text); }
   .nav-link-active {
-    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-nova-purple
-           text-sm font-medium bg-nova-purple/10;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold;
+    color: var(--nova-purple);
+    background: rgba(123,111,168,0.1);
   }
 
-  /* ── Gradient text ────────────────────────────────────────────────────────── */
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-nova-gradient;
-  }
-
-  /* ── Pill / badge ─────────────────────────────────────────────────────────── */
+  /* --- Pills & chips --- */
   .pill {
-    @apply inline-flex items-center gap-1 text-xs font-medium px-3 py-1
-           rounded-full bg-nova-purple/10 text-nova-purple;
+    @apply inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full;
+    background: rgba(123,111,168,0.1);
+    color: var(--nova-purple);
   }
-}
-
-@layer utilities {
-  /* Staggered opacity-0 for animation start states */
-  .opacity-0-start {
-    opacity: 0;
+  .chip {
+    @apply inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border;
+    background: rgba(255,255,255,0.7);
+    border-color: var(--nova-border-soft);
+    color: var(--nova-muted);
   }
-}
-/* Add these styles to the bottom of src/app/globals.css */
-/* ─────────────────────────────────────────────────────── */
-/* Custom slider thumb styling                            */
-/* ─────────────────────────────────────────────────────── */
+  .chip.peach { background: rgba(232,169,139,0.12); border-color: rgba(232,169,139,0.3); color: #A87155; }
+  .chip.rose  { background: rgba(210,140,167,0.12); border-color: rgba(210,140,167,0.3); color: #A85A75; }
 
-/* WebKit (Chrome, Safari, Edge) */
-input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: white;
-  border: 2.5px solid currentColor;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.12);
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
+  .dot {
+    @apply inline-block w-1.5 h-1.5 rounded-full;
+    background: var(--nova-purple);
+  }
 
-input[type='range']::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-}
+  /* --- Background surfaces --- */
+  .bg-mountains {
+    background: url('/images/sunset-mountains.jpg') center/cover no-repeat;
+  }
+  .bg-dunes, .sunset-horizon {
+    background-image:
+      linear-gradient(180deg, rgba(74,63,102,0.18) 0%, rgba(123,111,168,0.05) 25%, transparent 55%),
+      url('/images/desert-dunes.jpg');
+    background-size: cover, cover;
+    background-position: center, center;
+  }
+  .bg-water {
+    background: url('/images/sunset-water.jpg') center/cover no-repeat;
+  }
+  .bg-clouds {
+    background: url('/images/sunset-clouds.jpg') center/cover no-repeat;
+  }
 
-input[type='range']::-webkit-slider-thumb:active {
-  transform: scale(1.2);
-}
+  /* Grain texture overlay */
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    mix-blend-mode: overlay;
+    background-image:
+      radial-gradient(rgba(0,0,0,0.5) 1px, transparent 1px),
+      radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    background-position: 0 0, 1px 2px;
+    z-index: 0;
+  }
 
-/* Firefox */
-input[type='range']::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: white;
-  border: 2.5px solid currentColor;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.12);
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
+  /* Orb decorations */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .orb-pink {
+    background: radial-gradient(circle at 35% 30%, rgba(255,240,248,0.95) 0%, rgba(255,200,220,0.7) 25%, rgba(232,168,200,0.35) 50%, transparent 75%);
+    box-shadow: 0 0 60px rgba(255,180,210,0.55), 0 0 120px rgba(232,168,200,0.25);
+  }
+  .orb-peach {
+    background: radial-gradient(circle at 35% 30%, rgba(255,240,220,0.95) 0%, rgba(255,215,180,0.7) 25%, rgba(232,169,139,0.35) 50%, transparent 75%);
+    box-shadow: 0 0 60px rgba(255,190,150,0.55), 0 0 120px rgba(232,169,139,0.25);
+  }
+  .orb-lilac {
+    background: radial-gradient(circle at 35% 30%, rgba(245,235,255,0.95) 0%, rgba(210,195,240,0.7) 25%, rgba(168,158,208,0.35) 50%, transparent 75%);
+    box-shadow: 0 0 60px rgba(195,180,230,0.55), 0 0 120px rgba(168,158,208,0.25);
+  }
+  .orb-glossy {
+    background: radial-gradient(circle at 32% 28%, #FFF0F8 0%, #F4C2D8 18%, #B89CC0 55%, #5A4A6E 95%);
+    box-shadow: inset -8px -10px 18px rgba(40,28,56,0.4), 0 18px 30px rgba(40,28,56,0.35), 0 0 24px rgba(232,168,200,0.25);
+  }
 
-input[type='range']::-moz-range-thumb:hover {
-  transform: scale(1.15);
-}
+  /* Dreamscape surface */
+  .dreamscape {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    isolation: isolate;
+  }
 
-/* Remove default focus outline on range inputs */
-input[type='range']:focus {
-  outline: none;
-}
+  /* Wordmark */
+  .wordmark {
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    color: var(--nova-purple-dark);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+  }
 
-input[type='range']:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(123, 111, 168, 0.3);
+  /* Eyebrow text */
+  .eyebrow {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--nova-muted);
+    font-weight: 500;
+  }
+
+  /* Disclaimer */
+  .disclaimer {
+    font-size: 11px;
+    color: var(--nova-muted);
+    letter-spacing: 0.04em;
+    font-style: italic;
+  }
+
+  /* Highlight spans */
+  .hl-rose  { background: rgba(210,140,167,0.25); padding: 1px 5px; border-radius: 4px; }
+  .hl-peach { background: rgba(232,169,139,0.25); padding: 1px 5px; border-radius: 4px; }
 }
