@@ -36,7 +36,7 @@ export default function ConnectPage() {
   function handleConnect() {
     setConnecting(true)
     setTimeout(() => {
-      if (modal) setConnected(prev => new Set([...prev, modal.name]))
+      if (modal) setConnected(prev => new Set(Array.from(prev).concat([modal.name])))
       setModal(null)
       setConnecting(false)
     }, 1600)

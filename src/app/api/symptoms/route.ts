@@ -19,7 +19,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClientInstance } from '@/lib/supabase-server'
+import { createServerClientInstance, getSession } from '@/lib/supabase-server'
 import type { SymptomInsert } from '@/types/database'
 
 // ── GET /api/symptoms ────────────────────────────────────────────────────────

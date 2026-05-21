@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import type { SymptomRow } from '@/types/database'
 
 type Daypart = 'morning' | 'day' | 'evening' | 'night'
 
@@ -31,6 +32,16 @@ const MOOD_ORBS = [
   { key: 'good',  label: 'easy',   bg: 'radial-gradient(circle at 35% 30%, #F4D6BD 0%, #E8A98B 100%)' },
   { key: 'great', label: 'bright', bg: 'radial-gradient(circle at 35% 30%, #FFE4B8 0%, #F0B570 100%)' },
 ]
+
+const MOOD_SCORE: Record<string, number> = { awful: 2, low: 4, ok: 6, good: 8, great: 10 }
+
+function scoreToMoodKey(score: number): string {
+  if (score <= 2) return 'awful'
+  if (score <= 4) return 'low'
+  if (score <= 6) return 'ok'
+  if (score <= 8) return 'good'
+  return 'great'
+}
 
 const PROMPTS = [
   { label: 'My body needed…',      stub: 'My body needed' },
@@ -62,18 +73,18 @@ const QUICK_TILES = [
   },
 ]
 
-const MORNING_STREAK = [true, true, true, false, true, true, 'today'] as const
-const EVENING_STREAK = [true, false, true, true, false, true, false]
-
 export default function TodayPage() {
-  const [daypart, setDaypart]           = useState<Daypart>('morning')
-  const [dateStr, setDateStr]           = useState('TODAY')
-  const [chipDate, setChipDate]         = useState('')
-  const [selectedMood, setSelectedMood] = useState<string | null>(null)
-  const [intention, setIntention]       = useState('')
-  const [reflection, setReflection]     = useState('')
+  const [daypart, setDaypart]             = useState<Daypart>('morning')
+  const [dateStr, setDateStr]             = useState('TODAY')
+  const [chipDate, setChipDate]           = useState('')
+  const [selectedMood, setSelectedMood]   = useState<string | null>(null)
+  const [intention, setIntention]         = useState('')
+  const [reflection, setReflection]       = useState('')
   const [savingMorning, setSavingMorning] = useState(false)
   const [savingEvening, setSavingEvening] = useState(false)
+  const [savedMorning, setSavedMorning]   = useState(false)
+  const [savedEvening, setSavedEvening]   = useState(false)
+  const [existing, setExisting]           = useState<SymptomRow | null>(null)
 
   useEffect(() => {
     const dp  = getDaypart()
@@ -81,16 +92,70 @@ export default function TodayPage() {
     setDaypart(dp)
     setDateStr(`${DAYS[now.getDay()].toUpperCase()} · ${MONTHS[now.getMonth()].toUpperCase()} ${now.getDate()}`)
     setChipDate(`${MONTHS[now.getMonth()].slice(0, 3).toUpperCase()} ${now.getDate()}`)
+
+    // Load today's existing entry to pre-fill
+    fetch('/api/symptoms?days=1')
+      .then(r => r.json())
+      .then((json: { data?: SymptomRow[] }) => {
+        const today = now.toISOString().split('T')[0]
+        const entry = json.data?.find(r => r.logged_at === today)
+        if (entry) {
+          setExisting(entry)
+          setSelectedMood(scoreToMoodKey(entry.mood))
+          if (entry.notes) setIntention(entry.notes)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const scene = SCENE[daypart]
 
-  function pulse(which: 'morning' | 'evening') {
-    if (which === 'morning') {
-      setSavingMorning(true); setTimeout(() => setSavingMorning(false), 1800)
-    } else {
-      setSavingEvening(true); setTimeout(() => setSavingEvening(false), 1800)
-    }
+  async function handleSaveMorning() {
+    setSavingMorning(true)
+    try {
+      await fetch('/api/symptoms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mood:          MOOD_SCORE[selectedMood ?? 'ok'] ?? 6,
+          fatigue:       existing?.fatigue       ?? 5,
+          sleep_hours:   existing?.sleep_hours   ?? 7,
+          stress:        existing?.stress        ?? 5,
+          acne:          existing?.acne          ?? 5,
+          cramps:        existing?.cramps        ?? 5,
+          exercise_mins: existing?.exercise_mins ?? 0,
+          cycle_status:  existing?.cycle_status  ?? 'none',
+          notes:         intention || null,
+        }),
+      })
+      setSavedMorning(true)
+      setTimeout(() => setSavedMorning(false), 2500)
+    } catch {}
+    setSavingMorning(false)
+  }
+
+  async function handleSaveEvening() {
+    setSavingEvening(true)
+    try {
+      await fetch('/api/symptoms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mood:          MOOD_SCORE[selectedMood ?? 'ok'] ?? 6,
+          fatigue:       existing?.fatigue       ?? 5,
+          sleep_hours:   existing?.sleep_hours   ?? 7,
+          stress:        existing?.stress        ?? 5,
+          acne:          existing?.acne          ?? 5,
+          cramps:        existing?.cramps        ?? 5,
+          exercise_mins: existing?.exercise_mins ?? 0,
+          cycle_status:  existing?.cycle_status  ?? 'none',
+          notes:         reflection || intention || null,
+        }),
+      })
+      setSavedEvening(true)
+      setTimeout(() => setSavedEvening(false), 2500)
+    } catch {}
+    setSavingEvening(false)
   }
 
   const softBtn: React.CSSProperties = {
@@ -221,8 +286,8 @@ export default function TodayPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-            <button onClick={() => pulse('morning')} style={warmBtn}>
-              {savingMorning ? 'Saved ✿' : 'Save morning →'}
+            <button onClick={handleSaveMorning} disabled={savingMorning} style={warmBtn}>
+              {savingMorning ? 'Saving…' : savedMorning ? 'Saved ✿' : 'Save morning →'}
             </button>
             <Link href="/dashboard" style={softBtn}>Full log</Link>
           </div>
@@ -230,7 +295,7 @@ export default function TodayPage() {
             <div>
               <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginBottom: 6 }}>This week&apos;s mornings</div>
               <div style={{ display: 'flex', gap: 5 }}>
-                {MORNING_STREAK.map((d, i) => (
+                {[true, true, true, false, true, true, 'today'].map((d, i) => (
                   <span key={i} style={{
                     width: 10, height: 10, borderRadius: '50%', display: 'inline-block',
                     background: d === 'today' ? 'var(--nova-purple)' : d ? 'linear-gradient(135deg,#E8A98B,#D28CA7)' : 'var(--nova-border)',
@@ -283,8 +348,8 @@ export default function TodayPage() {
             }}
           />
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-            <button onClick={() => pulse('evening')} style={warmBtn}>
-              {savingEvening ? 'Saved ✿' : 'Save evening →'}
+            <button onClick={handleSaveEvening} disabled={savingEvening} style={warmBtn}>
+              {savingEvening ? 'Saving…' : savedEvening ? 'Saved ✿' : 'Save evening →'}
             </button>
             <Link href="/journal" style={softBtn}>Longer entry</Link>
           </div>
@@ -292,7 +357,7 @@ export default function TodayPage() {
             <div>
               <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginBottom: 6 }}>This week&apos;s evenings</div>
               <div style={{ display: 'flex', gap: 5 }}>
-                {EVENING_STREAK.map((d, i) => (
+                {[true, false, true, true, false, true, false].map((d, i) => (
                   <span key={i} style={{
                     width: 10, height: 10, borderRadius: '50%', display: 'inline-block',
                     background: d ? 'linear-gradient(135deg,#E8A98B,#D28CA7)' : 'var(--nova-border)',

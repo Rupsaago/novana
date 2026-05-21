@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const phases = [
@@ -47,8 +47,40 @@ const phases = [
   },
 ]
 
+function getDaysUntil(cycleDay: number, targetDay: number, cycleLength = 28) {
+  const diff = targetDay - cycleDay
+  return diff > 0 ? diff : diff + cycleLength
+}
+
+function addDays(days: number) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+}
+
 export default function CyclePage() {
   const [activePhase, setActivePhase] = useState('follicular')
+  const [cycleDay, setCycleDay]       = useState(8)
+  const [phaseName, setPhaseName]     = useState('follicular')
+
+  useEffect(() => {
+    fetch('/api/symptoms?days=60')
+      .then(r => r.json())
+      .then((json: { data?: Array<{ logged_at: string; cycle_status: string }> }) => {
+        const rows = (json.data ?? []).sort((a, b) => b.logged_at.localeCompare(a.logged_at))
+        const today = new Date(); today.setHours(0, 0, 0, 0)
+        const lastFlow = rows.find(r => r.cycle_status !== 'none')
+        if (!lastFlow) return
+        const flowDate = new Date(lastFlow.logged_at + 'T00:00:00')
+        const day = Math.floor((today.getTime() - flowDate.getTime()) / 86400000) + 1
+        const clamped = Math.max(1, Math.min(day, 28))
+        const phase = clamped <= 5 ? 'menstrual' : clamped <= 13 ? 'follicular' : clamped <= 16 ? 'ovulatory' : 'luteal'
+        setCycleDay(clamped)
+        setPhaseName(phase)
+        setActivePhase(phase)
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <>
@@ -90,7 +122,7 @@ export default function CyclePage() {
 
         <div style={{ position: 'relative', zIndex: 2 }}>
           <span className="chip" style={{ background: 'rgba(255,255,255,0.78)', borderColor: 'rgba(255,255,255,0.9)' }}>
-            <i className="dot" style={{ background: 'var(--nova-peach)' }} /> Day 8 of 28
+            <i className="dot" style={{ background: 'var(--nova-peach)' }} /> Day {cycleDay} of 28
           </span>
           <h1 style={{
             fontFamily: 'var(--font-fraunces)',
@@ -102,8 +134,8 @@ export default function CyclePage() {
             color: 'var(--nova-text)',
           }}>
             You&apos;re in your{' '}
-            <em style={{ fontStyle: 'italic', color: 'var(--nova-purple-dark)' }}>follicular</em>{' '}
-            bloom.
+            <em style={{ fontStyle: 'italic', color: 'var(--nova-purple-dark)' }}>{phaseName}</em>{' '}
+            {phaseName === 'menstrual' ? 'rest.' : phaseName === 'follicular' ? 'bloom.' : phaseName === 'ovulatory' ? 'peak.' : 'turn.'}
           </h1>
           <p style={{ color: 'var(--nova-muted)', fontSize: 17, maxWidth: '44ch', margin: 0, lineHeight: 1.65 }}>
             This is your body&apos;s slow lift — estrogen rising, energy building. The follicles in your ovaries are quietly developing one of the eggs that may become this month&apos;s ovulation. A bright, open phase.
@@ -145,8 +177,8 @@ export default function CyclePage() {
             <path d="M 138.9 181.5 A 88 88 0 1 1 100 12 L 100 100 Z" fill="url(#g-luteal)" opacity="0.95" />
             {/* Outer ring */}
             <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" />
-            {/* Day marker at day 8 (~102° from top) */}
-            <g transform="rotate(102 100 100)">
+            {/* Day marker — rotated based on current cycle day */}
+            <g transform={`rotate(${Math.round((cycleDay - 1) * 360 / 28)} 100 100)`}>
               <line x1="100" y1="20" x2="100" y2="6" stroke="#2F2A28" strokeWidth="2" strokeLinecap="round" />
               <circle cx="100" cy="12" r="6" fill="#fff" stroke="#2F2A28" strokeWidth="1.5" />
             </g>
@@ -166,8 +198,8 @@ export default function CyclePage() {
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.25)',
           }}>
             <div style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' }}>Day</div>
-            <div style={{ fontFamily: 'var(--font-fraunces)', fontSize: 56, lineHeight: 1, fontWeight: 400, margin: '4px 0' }}>8</div>
-            <div style={{ fontFamily: 'var(--font-fraunces)', fontStyle: 'italic', fontSize: 18, color: '#F4D6BD' }}>follicular</div>
+            <div style={{ fontFamily: 'var(--font-fraunces)', fontSize: 56, lineHeight: 1, fontWeight: 400, margin: '4px 0' }}>{cycleDay}</div>
+            <div style={{ fontFamily: 'var(--font-fraunces)', fontStyle: 'italic', fontSize: 18, color: '#F4D6BD' }}>{phaseName}</div>
           </div>
         </div>
       </section>
@@ -178,6 +210,7 @@ export default function CyclePage() {
           <div
             key={p.key}
             onClick={() => setActivePhase(p.key)}
+
             style={{
               position: 'relative',
               borderRadius: 'var(--radius-lg)',
@@ -204,7 +237,7 @@ export default function CyclePage() {
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: p.pipColor, display: 'inline-block', flexShrink: 0 }} />
-                {p.label}{p.youAreHere ? ' · you are here' : ''}
+                {p.label}{p.key === phaseName ? ' · you are here' : ''}
               </div>
               <h3 style={{ fontFamily: 'var(--font-fraunces)', fontSize: 22, fontWeight: 400, margin: '0 0 6px' }}>{p.title}</h3>
               <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginBottom: 12 }}>{p.days}</div>
@@ -402,11 +435,16 @@ export default function CyclePage() {
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginTop: 18 }}>
-          {[
-            { when: 'IN 6 DAYS · MAY 31', what: 'Ovulation window opens', why: 'Energy peaks. Libido often rises. Most fertile 24 hours.' },
-            { when: 'IN 9 DAYS · JUNE 3', what: 'Luteal phase begins', why: 'Progesterone climbs. Inward turn — focus may sharpen.' },
-            { when: 'IN 20 DAYS · JUNE 14', what: 'Period likely begins', why: 'Honor the rest your body asks for. PMS may arrive a few days prior.' },
-          ].map(pred => (
+          {(() => {
+            const ovulIn   = getDaysUntil(cycleDay, 14)
+            const lutealIn = getDaysUntil(cycleDay, 17)
+            const nextIn   = getDaysUntil(cycleDay, 28) + 1
+            return [
+              { when: `IN ${ovulIn} DAYS · ${addDays(ovulIn)}`, what: 'Ovulation window opens', why: 'Energy peaks. Libido often rises. Most fertile 24 hours.' },
+              { when: `IN ${lutealIn} DAYS · ${addDays(lutealIn)}`, what: 'Luteal phase begins', why: 'Progesterone climbs. Inward turn — focus may sharpen.' },
+              { when: `IN ${nextIn} DAYS · ${addDays(nextIn)}`, what: 'Period likely begins', why: 'Honor the rest your body asks for. PMS may arrive a few days prior.' },
+            ]
+          })().map(pred => (
             <div key={pred.when} style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.95)', borderRadius: 16, padding: 18 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--nova-muted)', marginBottom: 6 }}>{pred.when}</div>
               <div style={{ fontFamily: 'var(--font-fraunces)', fontSize: 19, fontWeight: 400, color: 'var(--nova-text)', marginBottom: 6 }}>{pred.what}</div>
