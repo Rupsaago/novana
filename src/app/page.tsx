@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import WaitlistFooterForm from '@/components/WaitlistFooterForm'
+import WaitlistForm from '@/components/WaitlistForm'
 
 export default function LandingPage() {
   return (
@@ -38,8 +38,8 @@ export default function LandingPage() {
             Understand your <em className="italic font-light text-nova-purple-dark">body.</em><br/>
             Honor your <em className="italic font-light text-nova-purple-dark">patterns.</em>
           </h1>
-          <p className="mt-5 mb-8 text-lg leading-relaxed text-nova-muted max-w-[52ch]">
-            A calm, intelligent companion that helps every woman — diagnosed, undiagnosed, or somewhere in between — notice what her body has been quietly saying. PMOS-aware. Cycle-aware. Always gentle.
+          <p className="mt-5 mb-8 text-lg leading-relaxed text-nova-muted max-w-[48ch]">
+            A calm companion that helps you notice what your body has been quietly saying — through symptoms, cycles, and patterns. Private by design.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/onboarding" className="btn-primary px-5 py-3">Get started — free</Link>
@@ -114,7 +114,7 @@ export default function LandingPage() {
             { title: 'Private by design', desc: 'End-to-end encryption on health data. You own your entries; export or delete anytime.' },
             { title: 'Soft, never prescriptive', desc: "Novana never diagnoses or recommends treatment. It reflects what you've noticed back to you." },
           ].map((f) => (
-            <div key={f.title} className="card-warm border border-nova-border-soft p-7 rounded-3xl hover:-translate-y-1 transition-transform duration-300 hover:shadow-nova">
+            <div key={f.title} className="card-warm border border-nova-border-soft p-7 rounded-3xl hover:-translate-y-0.5 transition-transform duration-200 hover:shadow-nova-sm">
               <div className="w-11 h-11 rounded-[14px] mb-4 flex items-center justify-center"
                    style={{ background: 'linear-gradient(135deg, #F1E0D2, #E8C9D4)', color: '#5A5080' }}>
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -319,8 +319,7 @@ export default function LandingPage() {
             <p className="disclaimer mt-3.5">Novana is not a medical device. This is not medical advice.</p>
             <div style={{ marginTop: 18 }}>
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--nova-text)', marginBottom: 4 }}>Early access</p>
-              <p style={{ fontSize: 12, color: 'var(--nova-muted)', marginBottom: 0 }}>Be first to know when Novana opens to everyone.</p>
-              <WaitlistFooterForm />
+              <WaitlistForm feature="General" />
             </div>
           </div>
           <div className="space-y-3">
@@ -344,7 +343,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="border-t border-nova-border/30 px-6 py-5 max-w-[1240px] mx-auto flex justify-between text-xs text-nova-muted">
-          <span>© 2026 Novana, Inc. Made with quiet care.</span>
+          <span>© 2026 Novana. All rights reserved.</span>
           <span>San Francisco, CA</span>
         </div>
       </footer>

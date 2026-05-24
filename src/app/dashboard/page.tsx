@@ -49,12 +49,19 @@ export default function DashboardPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) { setLoading(false); return }
 
-      const name = session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0] ?? 'Nova'
-      setFirstName(name.split(' ')[0])
+      // Prefer profile display_name > full_name > auth metadata > email prefix
+      const { data: prof } = await supabase
+        .from('profiles').select('display_name, full_name')
+        .eq('id', session.user.id).single()
+      const raw = prof?.display_name ?? prof?.full_name ??
+        session.user.user_metadata?.full_name ??
+        session.user.email?.split('@')[0] ?? 'Nova'
+      setFirstName(raw.split(' ')[0])
 
-      const { data: avg } = await supabase
+      const { data: avg, error: avgErr } = await supabase
         .from('symptom_averages_30d').select('*')
         .eq('user_id', session.user.id).single()
+      console.log('[Dashboard] symptom_averages_30d:', { avg, error: avgErr?.message })
       if (avg) {
         setAverages(avg)
         setDaysLogged(avg.total_days_logged ?? 0)
@@ -62,11 +69,17 @@ export default function DashboardPage() {
       }
 
       const ago7 = new Date(); ago7.setDate(ago7.getDate() - 7)
-      const { data: recent } = await supabase
+      const { data: recent, error: recentErr } = await supabase
         .from('symptoms').select('*')
         .eq('user_id', session.user.id)
         .gte('logged_at', ago7.toISOString().split('T')[0])
         .order('logged_at', { ascending: true })
+      console.log('[Dashboard] recent symptoms (7d):', {
+        count: recent?.length ?? 0,
+        error: recentErr?.message,
+        dateFrom: ago7.toISOString().split('T')[0],
+        sample: recent?.[0],
+      })
       if (recent) {
         setRecentData(recent.map((r) => ({
           ...r,
@@ -107,7 +120,7 @@ export default function DashboardPage() {
         <span className="orb orb-pink animate-float" style={{ width: 70, height: 70, top: '20%', right: '38%', zIndex: 2 }} />
         <span className="orb orb-peach animate-float delay-2" style={{ width: 48, height: 48, bottom: '22%', right: '26%', zIndex: 2 }} />
 
-        <div className="relative z-10 grid gap-7 items-center max-w-6xl mx-auto"
+        <div className="relative z-10 grid gap-7 items-center max-w-6xl mx-auto dash-hero-grid"
              style={{ gridTemplateColumns: '1.3fr 1fr' }}>
           <div>
             <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.75)' }}>{getDayLabel()}</div>
@@ -140,7 +153,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Two-column layout ──────────────────────────────────────────────── */}
-      <div className="px-5 md:px-7 pb-10 max-w-6xl mx-auto"
+      <div className="px-5 md:px-7 pb-10 max-w-6xl mx-auto dash-main-grid"
            style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1fr)', gap: 22, alignItems: 'start' }}>
 
         {/* ── LEFT column ─────────────────────────────────────────────────── */}
@@ -208,43 +221,10 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {/* Auto-sync strip */}
-            <div style={{
-              marginTop: 16, padding: '18px 22px',
-              background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.9)',
-              borderRadius: 18, display: 'grid', gridTemplateColumns: '32px 1fr auto',
-              gap: 14, alignItems: 'center', backdropFilter: 'blur(10px)',
-            }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 10,
-                background: 'linear-gradient(135deg, #1a1422, #5a4a6e)',
-                color: '#F4D6BD', display: 'grid', placeItems: 'center',
-              }}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2h6M9 22h6"/>
-                </svg>
-              </div>
-              <div style={{ display: 'flex', gap: 18, fontSize: 13 }}>
-                {[['Sleep', '6h 42m'], ['HRV', '48 ms'], ['Steps', '4,287'], ['Resting HR', '64 bpm']].map(([lbl, val]) => (
-                  <div key={lbl}>
-                    <div style={{ fontSize: 10, color: 'var(--nova-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{lbl}</div>
-                    <div className="font-display" style={{ fontSize: 17, fontWeight: 400, color: 'var(--nova-text)' }}>{val}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="animate-pulse-glow" style={{
-                  width: 8, height: 8, borderRadius: '50%', background: '#5BC287',
-                  display: 'inline-block',
-                }} />
-                <span style={{ fontSize: 11, color: 'var(--nova-muted)', letterSpacing: '0.04em' }}>Apple Watch</span>
-              </div>
-            </div>
-
             {/* Save + toggle */}
             <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               <button onClick={handleSave} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: 14 }}>
-                {saved ? '✓ Saved ✿' : '♡ Save today'}
+                {saved ? '✓ Saved' : 'Save today'}
               </button>
               <button onClick={() => setShowDetail(!showDetail)} className="btn-soft" style={{ whiteSpace: 'nowrap' }}>
                 {showDetail ? 'Hide details ↑' : 'Add more details →'}
@@ -287,10 +267,10 @@ export default function DashboardPage() {
                 padding: '16px 14px 4px',
                 boxShadow: '0 6px 20px rgba(74,63,102,0.10), inset 0 1px 0 rgba(255,255,255,0.4)',
               }}>
-                {recentData.length < 3 ? (
+                {recentData.length === 0 ? (
                   <div style={{ height: 190, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <p style={{ fontSize: 13, color: 'var(--nova-purple)', fontWeight: 600 }}>Log {3 - recentData.length} more day{3 - recentData.length !== 1 ? 's' : ''} to see your trends</p>
-                    <p style={{ fontSize: 12, color: 'var(--nova-muted)', textAlign: 'center' }}>{recentData.length} of 3 days logged this week</p>
+                    <p style={{ fontSize: 13, color: 'var(--nova-purple)', fontWeight: 600 }}>Log your first day to see trends</p>
+                    <p style={{ fontSize: 12, color: 'var(--nova-muted)', textAlign: 'center' }}>Head to Today to get started</p>
                   </div>
                 ) : (
                   <div style={{ height: 190 }}>
@@ -425,6 +405,7 @@ export default function DashboardPage() {
           <section className="grain relative overflow-hidden rounded-[var(--radius-lg)]" style={{
             padding: 28,
             background: 'radial-gradient(60% 60% at 80% 100%, #FBE2C8 0%, transparent 70%), linear-gradient(160deg, #E8C5D4 0%, #F1B894 100%)',
+            boxShadow: 'var(--shadow-lg)',
           }}>
             <span className="eyebrow" style={{ color: 'rgba(47,42,40,0.55)' }}>A gentle thought</span>
             <h3 className="font-display" style={{ fontStyle: 'italic', fontSize: 24, fontWeight: 400, margin: '10px 0 0', lineHeight: 1.3, maxWidth: '22ch' }}>
@@ -464,7 +445,11 @@ export default function DashboardPage() {
 
       <style>{`
         @media (max-width: 1060px) {
-          .dash-layout { grid-template-columns: 1fr !important; }
+          .dash-layout, .dash-main-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .dash-hero-grid { grid-template-columns: 1fr !important; }
+          .dash-hero-grid > div:last-child { display: none; }
         }
       `}</style>
     </div>

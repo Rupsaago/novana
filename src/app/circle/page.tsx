@@ -85,7 +85,7 @@ export function CircleContent() {
           { v: '12,847', lbl: 'In the circle today' },
           { v: <em style={{ fontStyle: 'italic', color: 'var(--nova-purple-dark)' }}>284</em>, lbl: 'Sharing this hour' },
           { v: '61%', lbl: 'In luteal this week' },
-          { v: '✿ 100%', lbl: 'Anonymous, always' },
+          { v: '100%', lbl: 'Anonymous, always' },
         ].map((t, i) => (
           <div key={i} style={{ padding: 18, borderRadius: 'var(--radius)', background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', textAlign: 'center' }}>
             <div style={{ fontFamily: 'var(--font-fraunces)', fontSize: 30, fontWeight: 400, color: 'var(--nova-text)' }}>{t.v}</div>
@@ -224,7 +224,7 @@ export function CircleContent() {
           </div>
         </div>
         <button style={{ background: 'linear-gradient(135deg, #F4D6BD, #E8A98B)', color: '#2F2A28', border: 'none', padding: '10px 22px', borderRadius: 999, fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all .2s ease' }}>
-          Share ✿
+          Share
         </button>
       </div>
 
@@ -238,7 +238,7 @@ export default function CirclePage() {
     return (
       <ComingSoonPage
         title="The Circle"
-        feature="circle"
+        feature="Circle Community"
         description="An anonymous community for women to share soft reflections, connect across cycle phases, and feel less alone."
       />
     )

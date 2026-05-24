@@ -369,7 +369,7 @@ export default function ResourcesPage() {
     return (
       <ComingSoonPage
         title="Novana Library"
-        feature="resources"
+        feature="Resources Library"
         description="Evidence-based articles on PMOS, hormones, cycle science, and more — written in plain language, reviewed by clinicians."
       />
     )

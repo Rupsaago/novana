@@ -102,7 +102,7 @@ export default function InsightsPage() {
 
         {/* Header */}
         <div>
-          <h1 className="font-display text-3xl md:text-4xl">AI Insights ✦</h1>
+          <h1 className="font-display text-3xl md:text-4xl">AI Insights</h1>
           <p className="text-nova-muted mt-1 text-sm">Quiet observations drawn from what you&apos;ve logged.</p>
         </div>
 

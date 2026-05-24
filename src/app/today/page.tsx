@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase'
 import type { SymptomRow } from '@/types/database'
 
 type Daypart = 'morning' | 'day' | 'evening' | 'night'
@@ -77,6 +78,7 @@ export default function TodayPage() {
   const [daypart, setDaypart]             = useState<Daypart>('morning')
   const [dateStr, setDateStr]             = useState('TODAY')
   const [chipDate, setChipDate]           = useState('')
+  const [firstName, setFirstName]         = useState('Nova')
   const [selectedMood, setSelectedMood]   = useState<string | null>(null)
   const [intention, setIntention]         = useState('')
   const [reflection, setReflection]       = useState('')
@@ -92,6 +94,21 @@ export default function TodayPage() {
     setDaypart(dp)
     setDateStr(`${DAYS[now.getDay()].toUpperCase()} · ${MONTHS[now.getMonth()].toUpperCase()} ${now.getDate()}`)
     setChipDate(`${MONTHS[now.getMonth()].slice(0, 3).toUpperCase()} ${now.getDate()}`)
+
+    // Load user name from profile
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return
+      supabase
+        .from('profiles').select('display_name, full_name')
+        .eq('id', session.user.id).single()
+        .then(({ data }) => {
+          const raw = data?.display_name ?? data?.full_name ??
+            session.user.user_metadata?.full_name ??
+            session.user.email?.split('@')[0] ?? 'Nova'
+          setFirstName(raw.split(' ')[0])
+        })
+    })
 
     // Load today's existing entry to pre-fill
     fetch('/api/symptoms?days=1')
@@ -200,7 +217,7 @@ export default function TodayPage() {
               {dateStr}
             </span>
             <h1 style={{ color: '#fff', fontSize: 'clamp(36px,4vw,56px)', fontWeight: 400, margin: 0, textShadow: '0 2px 14px rgba(46,36,64,0.4)' }}>
-              {scene.greeting}, <em style={{ fontStyle: 'italic', color: '#F4D6BD' }}>Nova.</em>
+              {scene.greeting}, <em style={{ fontStyle: 'italic', color: '#F4D6BD' }}>{firstName}.</em>
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.86)', marginTop: 14, fontSize: 16, maxWidth: '38ch', textShadow: '0 1px 4px rgba(46,36,64,0.3)' }}>
               {scene.sub}

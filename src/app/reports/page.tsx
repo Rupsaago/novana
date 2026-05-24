@@ -24,14 +24,17 @@ export default function ReportsPage() {
       </div>
 
       {/* Issue cover */}
-      <section style={{ position: 'relative', borderRadius: 'var(--radius-xl)', overflow: 'hidden', minHeight: 460, marginBottom: 36, isolation: 'isolate', display: 'grid', gridTemplateColumns: '1.1fr 1fr', color: '#fff' }}>
+      <section className="reports-cover" style={{ position: 'relative', borderRadius: 'var(--radius-xl)', overflow: 'hidden', minHeight: 460, marginBottom: 36, isolation: 'isolate', display: 'grid', gridTemplateColumns: '1.1fr 1fr', color: '#fff' }}>
         {/* Dark text side */}
         <div style={{ padding: '56px 48px', background: 'linear-gradient(160deg, #1a1422 0%, #2D2538 60%, #5A4A6E 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
           <div style={{ position: 'absolute', top: -50, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,169,139,0.35), transparent 70%)', filter: 'blur(20px)', pointerEvents: 'none' }} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, position: 'relative', zIndex: 2 }}>
               <span style={{ fontSize: 11, letterSpacing: '0.24em', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 600 }}>Issue No. 003 · May 2026</span>
-              <span style={{ background: 'rgba(244,214,189,0.15)', color: '#F4D6BD', border: '1px solid rgba(244,214,189,0.3)', padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>✿ AI written</span>
+              <span style={{ background: 'rgba(244,214,189,0.15)', color: '#F4D6BD', border: '1px solid rgba(244,214,189,0.3)', padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>
+                AI written
+              </span>
             </div>
             <h2 style={{ fontFamily: 'var(--font-fraunces)', fontSize: 'clamp(38px, 4.4vw, 60px)', fontWeight: 400, color: '#fff', margin: 0, letterSpacing: '-0.025em', lineHeight: 1.05, position: 'relative', zIndex: 2 }}>
               The month you <em style={{ fontStyle: 'italic', color: '#F4D6BD' }}>started</em> hearing yourself.
@@ -67,7 +70,7 @@ export default function ReportsPage() {
         <p style={{ color: 'var(--nova-text)', lineHeight: 1.7, fontSize: 16, margin: '0 0 14px', maxWidth: '64ch' }}>
           Most months don&apos;t have a clear story. This one does — and it&apos;s in the numbers that moved.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, margin: '24px 0' }}>
+        <div className="reports-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, margin: '24px 0' }}>
           {[
             { big: <>22<em style={{ fontStyle: 'italic', color: 'var(--nova-purple-dark)' }}>/31</em></>, lbl: 'Days logged', delta: '+9 vs. April', up: true },
             { big: '6.4', lbl: 'Avg mood', delta: '↑ 0.6', up: true },
@@ -225,6 +228,13 @@ export default function ReportsPage() {
         ))}
       </div>
       <div style={{ height: 64 }} />
+      <style>{`
+        @media (max-width: 768px) {
+          .reports-cover { grid-template-columns: 1fr !important; min-height: auto !important; }
+          .reports-cover > div:last-child { display: none; }
+          .reports-stats { grid-template-columns: 1fr 1fr !important; }
+        }
+      `}</style>
     </>
   )
 }

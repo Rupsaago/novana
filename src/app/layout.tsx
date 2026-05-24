@@ -25,15 +25,23 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: 'Novana — Know Your Body',
+  metadataBase: new URL('https://novana.app'),
+  title: 'Novana — Understand Your Body',
   description:
     'Track PMOS symptoms, discover patterns, and get gentle AI insights. ' +
-    'Novana helps you understand your body — not diagnose it.',
+    'Private by design.',
   keywords: ['PMOS', 'PCOS', 'symptom tracker', 'hormonal health', 'women health'],
   openGraph: {
-    title: 'Novana — Know Your Body',
-    description: 'Track PMOS symptoms with AI-powered insights.',
+    title: 'Novana — Understand Your Body',
+    description: 'Track PMOS symptoms, discover patterns, and get gentle AI insights. Private by design.',
     type: 'website',
+    images: [{ url: '/images/og-image.png', width: 1200, height: 630, alt: 'Novana' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Novana — Understand Your Body',
+    description: 'Track PMOS symptoms, discover patterns, and get gentle AI insights. Private by design.',
+    images: ['/images/og-image.png'],
   },
 }
 

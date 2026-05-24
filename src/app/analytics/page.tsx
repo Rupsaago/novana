@@ -48,6 +48,13 @@ export default function AnalyticsPage() {
         const res = await fetch(`/api/analytics?days=${days}`)
         const json = await res.json()
         if (!res.ok) { setError(json.error ?? 'Failed to load analytics.'); return }
+        console.log('[Analytics] data fetched:', {
+          days,
+          totalDays: json.totalDays,
+          chartDataLength: json.chartData?.length,
+          firstRow: json.chartData?.[0],
+          averages: json.averages,
+        })
         setData(json)
       } catch { setError('Network error. Please try again.') }
       finally { setLoading(false) }
@@ -64,7 +71,7 @@ export default function AnalyticsPage() {
 
         {/* Header */}
         <div>
-          <h1 className="font-display text-3xl md:text-4xl">Analytics ✦</h1>
+          <h1 className="font-display text-3xl md:text-4xl">Analytics</h1>
           <p className="text-nova-muted mt-1 text-sm">A slow, honest look at how your patterns are moving.</p>
         </div>
 
@@ -106,7 +113,7 @@ export default function AnalyticsPage() {
             background: 'radial-gradient(circle at 88% 28%, rgba(255,220,180,0.45) 0%, transparent 6%), radial-gradient(circle at 15% 85%, rgba(232,168,200,0.40) 0%, transparent 8%)',
             zIndex: 1, filter: 'blur(2px)',
           }} />
-          <div className="relative" style={{ zIndex: 2, padding: 32, display: 'grid', gridTemplateColumns: '1fr 240px', gap: 28 }}>
+          <div className="relative analytics-chart-grid" style={{ zIndex: 2, padding: 32, display: 'grid', gridTemplateColumns: '1fr 240px', gap: 28 }}>
             <div>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ color: 'rgba(255,252,247,0.85)', fontSize: 13, textShadow: '0 1px 4px rgba(74,63,102,0.25)' }}>Past {days} days · all symptoms</div>
@@ -124,10 +131,10 @@ export default function AnalyticsPage() {
                   <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ fontSize: 13, color: 'var(--nova-muted)' }}>Loading trends…</div>
                   </div>
-                ) : chartData.length < 3 ? (
+                ) : chartData.length === 0 ? (
                   <div style={{ height: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <p style={{ fontSize: 13, color: 'var(--nova-purple)', fontWeight: 600 }}>Log a few more days to see trends</p>
-                    <p style={{ fontSize: 12, color: 'var(--nova-muted)' }}>{chartData.length} of 3 days needed</p>
+                    <p style={{ fontSize: 13, color: 'var(--nova-purple)', fontWeight: 600 }}>No entries for this period</p>
+                    <p style={{ fontSize: 12, color: 'var(--nova-muted)' }}>Try a wider range or log today</p>
                   </div>
                 ) : (
                   <div style={{ height: 280 }}>
@@ -172,7 +179,7 @@ export default function AnalyticsPage() {
         </section>
 
         {/* Mini stat grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18 }}>
+        <div className="analytics-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18 }}>
           {[
             { lbl: 'Avg Mood',    val: avgs?.mood != null ? `${avgs.mood}` : '6.4',           unit: '/10', delta: '↑ 0.8 vs last week', deltaColor: 'var(--nova-purple-dark)', stroke: '#7B6FA8', path: 'M0,20 Q15,10 30,16 T60,12 T100,8' },
             { lbl: 'Avg Fatigue', val: avgs?.fatigue != null ? `${avgs.fatigue}` : '5.8',     unit: '/10', delta: '↓ 0.5 vs last week', deltaColor: '#A87155', stroke: '#E8A98B', path: 'M0,12 Q20,20 40,16 T70,22 T100,18' },
@@ -246,6 +253,13 @@ export default function AnalyticsPage() {
         </section>
 
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .analytics-chart-grid { grid-template-columns: 1fr !important; }
+          .analytics-chart-grid > div:last-child { display: none; }
+          .analytics-stat-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+      `}</style>
     </>
   )
 }

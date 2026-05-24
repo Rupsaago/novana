@@ -205,7 +205,7 @@ export default function CyclePage() {
       </section>
 
       {/* Phase Strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+      <div className="cycle-phase-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         {phases.map((p) => (
           <div
             key={p.key}
@@ -248,7 +248,7 @@ export default function CyclePage() {
       </div>
 
       {/* Phase Detail Panel */}
-      <section style={{
+      <section className="cycle-detail-grid" style={{
         background: 'var(--nova-card-2)',
         border: '1px solid var(--nova-border-soft)',
         borderRadius: 'var(--radius-lg)',
@@ -295,7 +295,7 @@ export default function CyclePage() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}>
               {['Starting something — a project, a habit, a conversation', 'Movement: cardio, dance, longer walks', 'Connecting socially without it draining you', 'Thinking strategically about your week', 'Skin tends to clear and brighten'].map(item => (
                 <li key={item} style={{ fontSize: 14, color: 'var(--nova-text)', paddingLeft: 22, position: 'relative', lineHeight: 1.55 }}>
-                  <span style={{ position: 'absolute', left: 0, top: 0, color: 'var(--nova-peach)', fontSize: 13 }}>✿</span>
+                  <span style={{ position: 'absolute', left: 0, top: 0, color: 'var(--nova-peach)', fontSize: 13 }}>·</span>
                   {item}
                 </li>
               ))}
@@ -309,7 +309,7 @@ export default function CyclePage() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}>
               {['Cravings ease; appetite levels out', 'Mood stabilizes after the menstrual dip', 'Sleep gets steadier night to night', 'Tolerance for discomfort returns', 'Inner critic quiets'].map(item => (
                 <li key={item} style={{ fontSize: 14, color: 'var(--nova-text)', paddingLeft: 22, position: 'relative', lineHeight: 1.55 }}>
-                  <span style={{ position: 'absolute', left: 0, top: 0, color: 'var(--nova-peach)', fontSize: 13 }}>✿</span>
+                  <span style={{ position: 'absolute', left: 0, top: 0, color: 'var(--nova-peach)', fontSize: 13 }}>·</span>
                   {item}
                 </li>
               ))}
@@ -319,7 +319,7 @@ export default function CyclePage() {
       </section>
 
       {/* Recommendations: Nourish / Move / Focus */}
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginBottom: 32 }}>
+      <section className="cycle-recs-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginBottom: 32 }}>
         {/* Nourish */}
         <div style={{
           background: `radial-gradient(70% 60% at 100% 0%, rgba(244,214,189,0.35), transparent 60%), linear-gradient(160deg, rgba(252,234,211,0.55), rgba(255,255,255,0.7))`,
@@ -336,9 +336,9 @@ export default function CyclePage() {
           </h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
             {[
-              { icon: '✿', color: 'var(--nova-peach)', bold: 'Fermented foods', rest: ' support estrogen metabolism. Kefir, kimchi, sauerkraut.' },
-              { icon: '✿', color: 'var(--nova-peach)', bold: 'Leafy greens, eggs, lean protein.', rest: ' Building blocks for the cycle ahead.' },
-              { icon: '✿', color: 'var(--nova-peach)', bold: 'Sprouted grains, seeds.', rest: ' Flax + pumpkin in this half of the cycle.' },
+              { icon: '·', color: 'var(--nova-peach)', bold: 'Fermented foods', rest: ' support estrogen metabolism. Kefir, kimchi, sauerkraut.' },
+              { icon: '·', color: 'var(--nova-peach)', bold: 'Leafy greens, eggs, lean protein.', rest: ' Building blocks for the cycle ahead.' },
+              { icon: '·', color: 'var(--nova-peach)', bold: 'Sprouted grains, seeds.', rest: ' Flax + pumpkin in this half of the cycle.' },
               { icon: '○', color: 'var(--nova-muted)', bold: '', rest: 'Lean lighter overall — appetite tends to be moderate now.', muted: true },
             ].map((item, i) => (
               <li key={i} style={{ display: 'grid', gridTemplateColumns: '22px 1fr', gap: 10, alignItems: 'start' }}>
@@ -367,9 +367,9 @@ export default function CyclePage() {
           </h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
             {[
-              { icon: '✿', color: 'var(--nova-purple)', bold: 'Heavy lifting week.', rest: ' Estrogen makes connective tissue more resilient. Strength gains come easiest here.' },
-              { icon: '✿', color: 'var(--nova-purple)', bold: 'HIIT, sprints, dance.', rest: ' Your VO₂ max peaks. Push harder than you usually do.' },
-              { icon: '✿', color: 'var(--nova-purple)', bold: 'Pick the harder class.', rest: " If you've been curious about trying something — this is the week." },
+              { icon: '·', color: 'var(--nova-purple)', bold: 'Heavy lifting week.', rest: ' Estrogen makes connective tissue more resilient. Strength gains come easiest here.' },
+              { icon: '·', color: 'var(--nova-purple)', bold: 'HIIT, sprints, dance.', rest: ' Your VO₂ max peaks. Push harder than you usually do.' },
+              { icon: '·', color: 'var(--nova-purple)', bold: 'Pick the harder class.', rest: " If you've been curious about trying something — this is the week." },
               { icon: '○', color: 'var(--nova-muted)', bold: '', rest: 'Save the gentler yoga & walks for luteal week.', muted: true },
             ].map((item, i) => (
               <li key={i} style={{ display: 'grid', gridTemplateColumns: '22px 1fr', gap: 10, alignItems: 'start' }}>
@@ -398,9 +398,9 @@ export default function CyclePage() {
           </h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
             {[
-              { icon: '✿', color: 'var(--nova-rose)', bold: 'Start the thing.', rest: ' New project, new habit, hard conversation. Inner critic is quieter.' },
-              { icon: '✿', color: 'var(--nova-rose)', bold: 'Strategic thinking week.', rest: ' Plan, map, dream — long-term cognition is sharpest now.' },
-              { icon: '✿', color: 'var(--nova-rose)', bold: 'Network, pitch, ask.', rest: ' Social energy is renewable. Use it before luteal asks for it back.' },
+              { icon: '·', color: 'var(--nova-rose)', bold: 'Start the thing.', rest: ' New project, new habit, hard conversation. Inner critic is quieter.' },
+              { icon: '·', color: 'var(--nova-rose)', bold: 'Strategic thinking week.', rest: ' Plan, map, dream — long-term cognition is sharpest now.' },
+              { icon: '·', color: 'var(--nova-rose)', bold: 'Network, pitch, ask.', rest: ' Social energy is renewable. Use it before luteal asks for it back.' },
               { icon: '○', color: 'var(--nova-muted)', bold: '', rest: "Don't waste this on dishes & emails — save mundane tasks for luteal.", muted: true },
             ].map((item, i) => (
               <li key={i} style={{ display: 'grid', gridTemplateColumns: '22px 1fr', gap: 10, alignItems: 'start' }}>
@@ -502,6 +502,16 @@ export default function CyclePage() {
           <p className="disclaimer" style={{ color: 'rgba(255,255,255,0.4)' }}>Educational only — not medical advice.</p>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .cycle-phase-strip { grid-template-columns: 1fr 1fr !important; }
+          .cycle-detail-grid { grid-template-columns: 1fr !important; }
+          .cycle-recs-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 500px) {
+          .cycle-phase-strip { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </>
   )
 }

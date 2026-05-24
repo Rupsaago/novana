@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useState } from 'react'
+import WaitlistForm from '@/components/WaitlistForm'
 
 const DEFAULT_QUESTIONS = [
   { q: 'Could my shortened cycles (28 → 24 days) be a sign of luteal phase defect or PMOS?', why: 'Cycle pattern: 3 consecutive shorter cycles.' },
@@ -57,7 +58,7 @@ export default function DoctorPrepPage() {
   return (
     <>
       {/* Page head */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 40, alignItems: 'end', paddingBottom: 28, marginBottom: 32, borderBottom: '1px solid var(--nova-border-soft)' }}>
+      <div className="dp-header-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 40, alignItems: 'end', paddingBottom: 28, marginBottom: 32, borderBottom: '1px solid var(--nova-border-soft)' }}>
         <div>
           <span className="chip" style={{ marginBottom: 14, display: 'inline-flex' }}>
             <i className="dot" style={{ background: 'var(--nova-rose)' }} /> AI-prepared · private to you
@@ -118,7 +119,7 @@ export default function DoctorPrepPage() {
       </div>
 
       {/* Folio */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, marginBottom: 32 }}>
+      <div className="dp-folio-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, marginBottom: 32 }}>
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
@@ -301,9 +302,27 @@ export default function DoctorPrepPage() {
         </p>
       </div>
 
+      {/* Waitlist for PDF & email export */}
+      <div style={{ background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', borderRadius: 'var(--radius-lg)', padding: '28px 32px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nova-purple-dark)', fontWeight: 600, marginBottom: 6 }}>Get notified</div>
+          <h3 className="font-display" style={{ fontSize: 22, fontWeight: 400, margin: 0 }}>PDF export &amp; doctor email</h3>
+          <p style={{ color: 'var(--nova-muted)', fontSize: 14, marginTop: 6, maxWidth: '52ch', lineHeight: 1.6 }}>
+            One-tap PDF download and direct email to your provider are coming to Doctor Prep. Join the waitlist to be first.
+          </p>
+        </div>
+        <WaitlistForm feature="Doctor Prep" />
+      </div>
+
       <div style={{ height: 64 }} />
 
-      <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-4px);opacity:1} }`}</style>
+      <style>{`
+        @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-4px);opacity:1} }
+        @media (max-width: 768px) {
+          .dp-header-grid { grid-template-columns: 1fr !important; }
+          .dp-folio-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </>
   )
 }

@@ -6,24 +6,79 @@ export interface Database {
 
       profiles: {
         Row: {
-          id:         string
-          email:      string
-          full_name:  string | null
-          created_at: string
-          updated_at: string
+          id:             string
+          email:          string
+          full_name:      string | null
+          display_name:   string | null
+          pronouns:       string | null
+          cycle_length:   number | null
+          period_length:  number | null
+          paused:         boolean | null
+          created_at:     string
+          updated_at:     string
         }
         Insert: {
-          id:          string
-          email:       string
-          full_name?:  string | null
-          created_at?: string
-          updated_at?: string
+          id:              string
+          email:           string
+          full_name?:      string | null
+          display_name?:   string | null
+          pronouns?:       string | null
+          cycle_length?:   number | null
+          period_length?:  number | null
+          paused?:         boolean | null
+          created_at?:     string
+          updated_at?:     string
         }
         Update: {
-          id?:         string
-          email?:      string
-          full_name?:  string | null
-          updated_at?: string
+          id?:             string
+          email?:          string
+          full_name?:      string | null
+          display_name?:   string | null
+          pronouns?:       string | null
+          cycle_length?:   number | null
+          period_length?:  number | null
+          paused?:         boolean | null
+          updated_at?:     string
+        }
+        Relationships: []
+      }
+
+      user_preferences: {
+        Row: {
+          id:                   string
+          user_id:              string | null
+          encrypt_logs:         boolean | null
+          anonymous_research:   boolean | null
+          local_ai:             boolean | null
+          notif_daily_log:      boolean | null
+          notif_weekly_summary: boolean | null
+          notif_cycle_phase:    boolean | null
+          notif_journal_invite: boolean | null
+          created_at:           string
+          updated_at:           string
+        }
+        Insert: {
+          id?:                   string
+          user_id?:              string | null
+          encrypt_logs?:         boolean | null
+          anonymous_research?:   boolean | null
+          local_ai?:             boolean | null
+          notif_daily_log?:      boolean | null
+          notif_weekly_summary?: boolean | null
+          notif_cycle_phase?:    boolean | null
+          notif_journal_invite?: boolean | null
+          created_at?:           string
+          updated_at?:           string
+        }
+        Update: {
+          encrypt_logs?:         boolean | null
+          anonymous_research?:   boolean | null
+          local_ai?:             boolean | null
+          notif_daily_log?:      boolean | null
+          notif_weekly_summary?: boolean | null
+          notif_cycle_phase?:    boolean | null
+          notif_journal_invite?: boolean | null
+          updated_at?:           string
         }
         Relationships: []
       }

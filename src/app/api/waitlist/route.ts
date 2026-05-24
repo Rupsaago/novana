@@ -10,9 +10,15 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServerClientInstance()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from('waitlist').insert({ email: email.trim().toLowerCase(), feature })
+    const { error } = await (supabase as any)
+      .from('waitlist')
+      .insert({ email: email.trim().toLowerCase(), feature })
 
     if (error) {
+      // Unique constraint violation — email already signed up for this feature
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'already_on_list' }, { status: 409 })
+      }
       console.error('[POST /api/waitlist]', error)
       return NextResponse.json({ error: 'Failed to join waitlist.' }, { status: 500 })
     }

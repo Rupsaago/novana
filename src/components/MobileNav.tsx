@@ -229,7 +229,7 @@ export default function MobileNav() {
             onClick={() => setOpen(false)}
           />
           {/* Drawer */}
-          <div className="fixed top-0 left-0 h-full z-50 md:hidden shadow-nova-lg">
+          <div className="fixed top-0 left-0 h-full z-50 md:hidden shadow-nova">
             <SidebarContents
               user={user}
               onClose={() => setOpen(false)}

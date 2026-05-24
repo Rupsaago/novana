@@ -225,7 +225,9 @@ export default function OnboardingPage() {
           {/* Step 6: Done */}
           {step === 6 && (
             <div className="text-center">
-              <div className="text-[64px] mb-3.5">✿</div>
+              <div className="mb-3.5 mx-auto" style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #E8A98B 0%, #D28CA7 50%, #8A7BB8 100%)', display: 'grid', placeItems: 'center' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="32" height="32"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
               <span className="block text-[11px] tracking-[0.22em] uppercase mb-3.5" style={{ color: 'rgba(255,255,255,0.65)' }}>You&apos;re in · 6 of 6</span>
               <h2 className="text-white mb-3">Your space is <em className="italic" style={{ color: '#F4D6BD' }}>ready.</em></h2>
               <p className="mb-7">Novana will get smarter the more you check in — but you&apos;ll get something gentle on day one.</p>

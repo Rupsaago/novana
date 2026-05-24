@@ -29,6 +29,14 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
+    console.log('[GET /api/analytics]', {
+      userId: session.user.id,
+      days,
+      dateFrom: getDateDaysAgo(days),
+      rowCount: symptoms?.length ?? 0,
+      sample: symptoms?.[0] ?? null,
+    })
+
     // Format dates to short readable labels e.g. "May 13"
     const chartData = (symptoms ?? []).map((s) => ({
       ...s,

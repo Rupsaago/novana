@@ -102,11 +102,11 @@ export default function JournalPage() {
       <div className="max-w-5xl">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-display text-3xl md:text-4xl">Journal ✦</h1>
+          <h1 className="font-display text-3xl md:text-4xl">Journal</h1>
           <p className="text-nova-muted mt-1 text-sm">A no-pressure place to put words to a day.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
+        <div className="journal-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
 
           {/* Writing card */}
           <section style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', boxShadow: 'var(--shadow)' }}>
@@ -119,7 +119,7 @@ export default function JournalPage() {
 
             <div style={{ padding: '24px 28px' }}>
               {error && <div style={{ background: 'rgba(210,140,167,0.12)', border: '1px solid rgba(210,140,167,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: 'var(--nova-rose)', marginBottom: 16 }}>{error}</div>}
-              {saveSuccess && <div style={{ background: 'rgba(91,194,135,0.12)', border: '1px solid rgba(91,194,135,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#3A8C60', marginBottom: 16 }}>Entry saved ✿</div>}
+              {saveSuccess && <div style={{ background: 'rgba(91,194,135,0.12)', border: '1px solid rgba(91,194,135,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#3A8C60', marginBottom: 16 }}>Entry saved.</div>}
 
               <span style={{ fontSize: 12, color: 'var(--nova-muted)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10, display: 'block' }}>Mood</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
@@ -273,12 +273,12 @@ export default function JournalPage() {
                         <p style={{ fontSize: 13, color: 'var(--nova-muted)', lineHeight: 1.5, margin: 0 }}>{preview}{e.content.length > 100 ? '…' : ''}</p>
                         {!e.ai_summary && (
                           <button onClick={() => handleSummarise(e.id, e.content)} disabled={summarising === e.id} style={{ marginTop: 8, fontSize: 11, color: 'var(--nova-purple)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                            {summarising === e.id ? 'Summarising…' : '✦ Summarise with AI'}
+                            {summarising === e.id ? 'Summarising…' : 'Summarise with AI'}
                           </button>
                         )}
                         {e.ai_summary && (
                           <div style={{ marginTop: 8, background: 'rgba(123,111,168,0.08)', border: '1px solid rgba(123,111,168,0.2)', borderRadius: 10, padding: '8px 12px', fontSize: 11, color: 'var(--nova-muted)' }}>
-                            <strong style={{ color: 'var(--nova-purple)' }}>✨ AI: </strong>{e.ai_summary}
+                            <strong style={{ color: 'var(--nova-purple)' }}>AI: </strong>{e.ai_summary}
                           </div>
                         )}
                       </div>
@@ -292,6 +292,11 @@ export default function JournalPage() {
 
         <p className="disclaimer" style={{ textAlign: 'center', marginTop: 36 }}>Your entries are encrypted and private. Novana is a wellness tool, not medical advice.</p>
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .journal-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </>
   )
 }

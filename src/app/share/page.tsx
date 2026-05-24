@@ -307,7 +307,7 @@ export default function SharePage() {
     return (
       <ComingSoonPage
         title="Share with care"
-        feature="share"
+        feature="Share with Care"
         description="Send a soft snapshot of your cycle data to a partner, friend, or doctor. You control exactly what they see."
       />
     )

@@ -245,7 +245,7 @@ export default function ConnectPage() {
     return (
       <ComingSoonPage
         title="Connect devices"
-        feature="connect"
+        feature="Device Connect"
         description="Sync your Apple Watch, Oura, Fitbit, and more. Let your body's data come to you — automatically."
       />
     )
