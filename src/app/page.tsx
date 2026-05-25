@@ -192,8 +192,8 @@ export default function LandingPage() {
         <div className="rounded-[36px] overflow-hidden relative isolate min-h-[400px]">
           <Image src="/images/sunset-water.jpg" alt="" fill className="object-cover" style={{ zIndex: -2 }} />
           <div className="absolute inset-0" style={{ zIndex: -1, background: 'linear-gradient(135deg, rgba(20,14,28,0.78) 0%, rgba(46,36,64,0.55) 50%, rgba(74,63,102,0.3) 100%)' }} />
-          <div className="relative z-10 p-16 md:p-20 grid md:grid-cols-2 gap-14 items-center text-white">
-            <div>
+          <div className="relative z-10 p-10 md:p-20 grid md:grid-cols-2 gap-14 items-start text-white">
+            <div className="md:sticky md:top-24">
               <span className="chip mb-4" style={{ background: 'rgba(255,255,255,0.18)', borderColor: 'rgba(255,255,255,0.3)', color: '#fff' }}>
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#F4D6BD' }} /> Why Novana exists
               </span>
@@ -201,16 +201,21 @@ export default function LandingPage() {
                 We built the app we wished <em className="italic" style={{ color: '#F4D6BD' }}>existed</em> when the doctors stopped listening.
               </h2>
             </div>
-            <div className="space-y-4 text-base leading-[1.7]" style={{ color: 'rgba(255,255,255,0.85)' }}>
-              <p>It took six doctors and seven years before someone said the word <em className="italic" style={{ color: '#F4D6BD' }}>PMOS</em> out loud. By then I&apos;d been told it was stress, anxiety, weight, attitude — anything but a real condition with real research behind it.</p>
-              <p>The apps that existed wanted to track me. Predict me. Sell me. None of them just <em className="italic" style={{ color: '#F4D6BD' }}>helped</em> me see what was happening — calmly, privately, in language a person could actually use.</p>
-              <p>Novana is the version that finally does.</p>
-              <div className="flex items-center gap-3.5 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
-                <div className="w-11 h-11 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(135deg, #E8A98B, #D28CA7)' }} />
-                <div>
-                  <div className="font-medium text-white">— Asha M.</div>
-                  <div className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Founder · diagnosed at 28</div>
-                </div>
+            <div className="space-y-6" style={{ color: 'rgba(255,255,255,0.88)', fontSize: '15px', lineHeight: '1.75' }}>
+              <p className="font-display text-2xl md:text-3xl text-white leading-snug" style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', fontWeight: 400, letterSpacing: '-0.01em' }}>
+                I was 14 years old when I got diagnosed with PMOS.
+              </p>
+              <p>It was one of the most bittersweet moments of my life. On one hand I was relieved, because for years I had been told to ignore my symptoms and wait for my body to regulate on its own — which it never did. But on the other hand, getting diagnosed felt like a burden had been placed on me, making me feel like I&apos;d always have a disadvantage to everyone else.</p>
+              <p>Since my diagnosis, I was pressured to start contraceptives. There was no official cure for PMOS, and the only thing that could control my symptoms was birth control. After turning 18 and moving across the country, I started thinking about the future, and started to worry about how I could ever go back to the body I had before contraceptives. One where I was always fatigued, overbleeding, and never felt confident about my body.</p>
+              <p>Because of the weight that PMOS had on my life, I spent over two years researching it. Using my background in Computer Engineering, I built an AI model that identifies trends in people&apos;s symptoms and can make an assumption on whether or not they have PMOS. After all of this, I decided to put everything I learned into this app, so that other women can find the direction and guidance that led me astray for years.</p>
+              <p>Novana is everything I learned, built into something I wish had existed when I was 14. It&apos;s not a diagnostic tool. It&apos;s not a replacement for your doctor. It&apos;s a place to finally feel like your body makes sense. It&apos;s to see your patterns, track your rhythms, and walk into every appointment with proof that I was never able to give growing up.</p>
+              <p>PMOS turned out to be a gift, because it taught me how to care for my body, how to advocate for myself, and how to build something that might help women all over the world find the direction I spent years searching for.</p>
+              <p className="pt-2 font-display text-lg" style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: '#C4ADE8', fontWeight: 400 }}>
+                That&apos;s why Novana exists. ♡
+              </p>
+              <div className="pt-6 border-t" style={{ borderColor: 'rgba(255,255,255,0.15)', marginTop: '8px' }}>
+                <div className="font-medium text-white">— Rupsaa G.</div>
+                <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.6)' }}>Founder · diagnosed at 14</div>
               </div>
             </div>
           </div>
