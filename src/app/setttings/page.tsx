@@ -387,7 +387,7 @@ export default function SettingsPage() {
       router.push('/')
     } catch {
       setModalLoading(false)
-      addToast('Could not delete automatically. Email privacy@novana.app.', 'error')
+      addToast('Could not delete automatically. Email rupsgos@gmail.com.', 'error')
     }
   }
 
@@ -768,7 +768,7 @@ export default function SettingsPage() {
       {pauseModal && (
         <Modal title="Pause your account" onClose={() => setPauseModal(false)}>
           <p style={{ color: 'var(--nova-muted)', fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>
-            Your account will be paused and you&apos;ll be signed out. All your data is kept safe. To reactivate, email <strong>hello@novana.app</strong>.
+            Your account will be paused and you&apos;ll be signed out. All your data is kept safe. To reactivate, email <strong>rupsgos@gmail.com</strong>.
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setPauseModal(false)} className="btn-soft" style={{ flex: 1, justifyContent: 'center' }}>Never mind</button>
@@ -817,12 +817,6 @@ export default function SettingsPage() {
 
       <ToastContainer toasts={toasts} remove={removeToast} />
 
-      <style>{`
-        @media (max-width: 768px) {
-          .settings-grid { grid-template-columns: 1fr !important; }
-          .settings-grid > nav { display: none; }
-        }
-      `}</style>
     </>
   )
 }

@@ -2,35 +2,21 @@
 > novana@0.1.0 dev
 > next dev
 
+ ⚠ Port 3000 is in use, trying 3001 instead.
   ▲ Next.js 14.2.31
-  - Local:        http://localhost:3000
+  - Local:        http://localhost:3001
   - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 1849ms
- ✓ Compiled /src/middleware in 222ms (126 modules)
- ○ Compiling /about ...
- ✓ Compiled /about in 1741ms (530 modules)
- GET /about 200 in 2005ms
- ✓ Compiled in 183ms (258 modules)
- GET /about 200 in 61ms
- [AuthApiError: Invalid Refresh Token: Refresh Token Not Found] {
-  __isAuthError: true,
-  name: 'AuthApiError',
-  status: 400,
-  code: 'refresh_token_not_found'
-}
- [AuthApiError: Invalid Refresh Token: Refresh Token Not Found] {
-  __isAuthError: true,
-  name: 'AuthApiError',
-  status: 400,
-  code: 'refresh_token_not_found'
-}
- ✓ Compiled /_not-found in 279ms (533 modules)
- GET /about 404 in 369ms
- ✓ Compiled in 952ms (522 modules)
- ✓ Compiled in 252ms (263 modules)
- ✓ Compiled in 214ms (263 modules)
- ✓ Compiled in 447ms (263 modules)
- ✓ Compiled in 233ms (263 modules)
- ✓ Compiled in 180ms (263 modules)
+ ✓ Ready in 3.1s
+ ○ Compiling /src/middleware ...
+ ✓ Compiled /src/middleware in 929ms (126 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 4.6s (595 modules)
+ ✓ Compiled in 576ms (277 modules)
+ GET / 200 in 5190ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (101kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (231kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ GET / 200 in 78ms
+ ✓ Compiled /favicon.ico in 455ms (332 modules)
+ GET /favicon.ico 200 in 602ms

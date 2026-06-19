@@ -33,7 +33,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="text-nova-muted text-sm">
-            Last updated: May 2026
+            Last updated: June 2026
           </p>
         </div>
 
@@ -198,9 +198,9 @@ export default function PrivacyPage() {
             <p>
               If you have any questions about this privacy policy or your data,
               please contact us at:{' '}
-              <span className="font-medium text-nova-text">
-                [contact@novana.app — add your email here]
-              </span>
+              <a href="mailto:rupsgos@gmail.com" className="font-medium text-nova-purple hover:underline">
+                rupsgos@gmail.com
+              </a>
             </p>
           </section>
 

@@ -322,6 +322,12 @@ body.reduce-motion [class*="delay-"] {
   .hl-peach { background: rgba(232,169,139,0.25); padding: 1px 5px; border-radius: 4px; }
 }
 
+/* ── Settings page responsive grid ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .settings-grid { grid-template-columns: 1fr !important; }
+  .settings-grid > nav { display: none; }
+}
+
 /* ── Mobile responsiveness (390px / iPhone-sized) ──────────────────────── */
 @media (max-width: 430px) {
   h1 { font-size: clamp(32px, 9vw, 48px) !important; }

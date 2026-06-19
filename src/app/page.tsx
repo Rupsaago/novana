@@ -11,10 +11,9 @@ export default function LandingPage() {
         <div className="max-w-[1240px] mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="wordmark">novana</Link>
           <nav className="hidden md:flex gap-7 text-sm text-nova-muted">
-            <a href="#features" className="hover:text-nova-text transition-colors">Features</a>
-            <a href="#how" className="hover:text-nova-text transition-colors">How it works</a>
-            <a href="#manifesto" className="hover:text-nova-text transition-colors">Manifesto</a>
-            <a href="#pricing" className="hover:text-nova-text transition-colors">Pricing</a>
+            <a href="#how-it-works" className="hover:text-nova-text transition-colors">How it works</a>
+            <a href="#features" className="hover:text-nova-text transition-colors">Why Novana</a>
+            <Link href="/about" className="hover:text-nova-text transition-colors">Manifesto</Link>
           </nav>
           <div className="flex items-center gap-2.5">
             <Link href="/auth/login" className="btn-ghost text-sm px-4 py-2">Sign in</Link>
@@ -52,44 +51,61 @@ export default function LandingPage() {
           <div className="absolute left-0 top-5 w-[280px] h-[580px] rounded-[46px] p-2.5 animate-float"
                style={{ background: '#1a1416', boxShadow: '0 30px 80px rgba(74,63,102,0.28), 0 8px 24px rgba(47,42,40,0.10)' }}>
             <div className="w-full h-full rounded-[36px] overflow-hidden relative" style={{ background: '#F7F2ED' }}>
+              {/* Notch */}
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[100px] h-6 rounded-full z-10" style={{ background: '#1a1416' }} />
-              <div className="h-[200px] relative overflow-hidden sunset-horizon grain">
-                <span className="absolute top-4 left-5 font-display italic text-white text-[18px] z-10">novana</span>
-                <h4 className="absolute left-5 bottom-5 text-white font-display text-[22px] font-normal z-10" style={{ margin: 0, textShadow: '0 1px 8px rgba(0,0,0,0.2)' }}>Good morning, Nova</h4>
+              {/* Hero banner */}
+              <div style={{ height: 190, background: 'linear-gradient(160deg,rgba(74,63,102,0.72) 0%,rgba(123,111,168,0.38) 60%,transparent 100%), url(/images/sunset-water.jpg) center/cover', paddingTop: 56, paddingLeft: 20, paddingRight: 20, position: 'relative' }}>
+                <div style={{ fontFamily: 'Georgia,serif', fontStyle: 'italic', color: '#fff', fontSize: 13, opacity: 0.9, marginBottom: 6 }}>novana</div>
+                <div style={{ fontFamily: 'Georgia,serif', color: '#fff', fontSize: 18, fontWeight: 400, lineHeight: 1.15 }}>Good morning, Nova ✦</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>Follicular · Day 8 of 28</div>
               </div>
-              <div className="p-4">
-                <div className="bg-white rounded-[18px] p-3.5 mb-3 border border-nova-border-soft shadow-nova-sm">
-                  <div className="flex justify-between items-center text-xs font-semibold mb-2.5">
-                    <span>Daily Symptom Log</span><span className="text-nova-muted font-normal">May 25</span>
-                  </div>
-                  {[{ w: '72%', c: '#7B6FA8' }, { w: '60%', c: '#E8A98B' }, { w: '50%', c: '#D28CA7' }, { w: '40%', c: '#8FA7C6' }].map((s, i) => (
-                    <div key={i} className="grid grid-cols-[14px_1fr_30px] gap-2 items-center py-1">
-                      <span className="w-3.5 h-3.5 rounded-full bg-nova-card" />
-                      <div className="h-1 rounded-full bg-nova-card overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: s.w, background: s.c }} />
+              {/* Glance cards */}
+              <div style={{ padding: '14px 14px 0' }}>
+                <div style={{ background: '#fff', borderRadius: 16, padding: '12px 14px', marginBottom: 10, border: '1px solid #EFE6DF' }}>
+                  <div style={{ fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6F6A66', marginBottom: 8 }}>Today at a glance</div>
+                  {[['Mood','#7B6FA8','75%'],['Energy','#E8A98B','60%'],['Sleep','#8FA7C6','82%'],['Stress','#D28CA7','40%']].map(([l,c,w])=>(
+                    <div key={l} style={{ display: 'grid', gridTemplateColumns: '42px 1fr 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 9, color: '#6F6A66' }}>{l}</span>
+                      <div style={{ height: 4, background: '#EFE6DF', borderRadius: 99 }}>
+                        <div style={{ height: '100%', width: w, background: c, borderRadius: 99 }} />
                       </div>
-                      <span className="text-[9px] text-nova-muted text-right">{parseInt(s.w) / 10}/10</span>
+                      <span style={{ fontSize: 9, color: c, textAlign: 'right', fontWeight: 600 }}>{parseInt(w)/10}</span>
                     </div>
                   ))}
-                  <div className="mt-1.5 text-center py-2 rounded-xl text-white text-xs font-medium" style={{ background: '#7B6FA8' }}>
-                    Save today&apos;s log
-                  </div>
+                </div>
+                <div style={{ background: 'linear-gradient(135deg,#2D2538,#4A3F66)', borderRadius: 14, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>✦ AI insight</div>
+                  <div style={{ fontFamily: 'Georgia,serif', color: '#fff', fontSize: 12, lineHeight: 1.35 }}>Sleep lifts on days you move.</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4, lineHeight: 1.4 }}>Spotted across 3 cycles.</div>
                 </div>
               </div>
             </div>
           </div>
           <div className="absolute right-0 top-[60px] w-[280px] h-[580px] rounded-[46px] p-2.5 animate-float-slow"
                style={{ background: '#1a1416', boxShadow: '0 30px 80px rgba(74,63,102,0.28), 0 8px 24px rgba(47,42,40,0.10)' }}>
-            <div className="w-full h-full rounded-[36px] overflow-hidden bg-water relative">
+            <div className="w-full h-full rounded-[36px] overflow-hidden" style={{ background: '#1a1422' }}>
+              {/* Notch */}
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[100px] h-6 rounded-full z-10" style={{ background: '#1a1416' }} />
-              <div className="pt-[60px] px-4 pb-4 h-full overflow-hidden">
-                <div className="rounded-[18px] p-3.5 mb-3.5" style={{ background: 'rgba(43,35,56,0.78)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <span className="inline-flex items-center gap-1.5 rounded-full text-white text-[10px] px-2.5 py-1"
-                        style={{ background: 'rgba(255,255,255,0.12)' }}>✦ AI insight</span>
-                  <h6 className="font-display text-white text-[16px] font-normal mt-2.5 mb-1">Your patterns this week</h6>
-                  <p className="text-[10px] leading-[1.5]" style={{ color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-                    Sleep quality tends to <span className="hl-rose">lift on days you exercise</span>. Stress runs <span className="hl-peach">higher mid-cycle</span> — gentle pacing may help.
-                  </p>
+              {/* Today ritual header */}
+              <div style={{ height: 160, background: 'linear-gradient(160deg,rgba(20,14,28,0.85) 0%,rgba(74,63,102,0.5) 100%), url(/images/sunset-clouds.jpg) center/cover', paddingTop: 56, paddingLeft: 20, paddingRight: 20 }}>
+                <div style={{ fontFamily: 'Georgia,serif', color: '#fff', fontSize: 16, fontWeight: 400 }}>Today&apos;s ritual</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>Log how you&apos;re arriving</div>
+              </div>
+              {/* Symptom sliders */}
+              <div style={{ padding: '16px 16px 0' }}>
+                {[['Mood','#7B6FA8','72%'],['Fatigue','#E8A98B','45%'],['Stress','#D28CA7','38%']].map(([l,c,w])=>(
+                  <div key={l} style={{ marginBottom: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{l}</span>
+                      <span style={{ fontSize: 10, color: c, fontWeight: 600 }}>{parseInt(w)/10}/10</span>
+                    </div>
+                    <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 99 }}>
+                      <div style={{ height: '100%', width: w, background: c, borderRadius: 99 }} />
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: 18, background: 'linear-gradient(135deg,#7B6FA8,#D28CA7)', borderRadius: 99, padding: '10px 0', textAlign: 'center', fontSize: 11, color: '#fff', fontWeight: 600 }}>
+                  Save Today&apos;s Log ♡
                 </div>
               </div>
             </div>
@@ -118,7 +134,10 @@ export default function LandingPage() {
               <div className="w-11 h-11 rounded-[14px] mb-4 flex items-center justify-center"
                    style={{ background: 'linear-gradient(135deg, #F1E0D2, #E8C9D4)', color: '#5A5080' }}>
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                  <circle cx="12" cy="12" r="9"/>
+                  <circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+                  <circle cx="15" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
                 </svg>
               </div>
               <h3 className="font-display text-[22px] mb-2">{f.title}</h3>
@@ -166,7 +185,7 @@ export default function LandingPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="max-w-[1240px] mx-auto px-6 mt-20">
+      <section className="max-w-[1240px] mx-auto px-6 mt-20" id="how-it-works">
         <div className="text-center mb-12">
           <span className="eyebrow block mb-3">How it works</span>
           <h2>Three small acts of attention.</h2>
@@ -248,8 +267,8 @@ export default function LandingPage() {
       <section className="max-w-[1240px] mx-auto px-6 mt-20 mb-20" id="pricing">
         <div className="text-center mb-12">
           <span className="eyebrow block mb-3">Pricing</span>
-          <h2>Free, <em className="italic text-nova-purple-dark">forever.</em></h2>
-          <p className="max-w-[56ch] mx-auto mt-3.5 text-nova-muted">Most of what makes Novana good costs you nothing. Premium adds the things that take real engineering — auto-reports, advanced AI, wearable history, doctor exports.</p>
+          <h2>Simple, transparent pricing.</h2>
+          <p className="max-w-[56ch] mx-auto mt-3.5 text-nova-muted">Most of what makes Novana good costs you nothing. Premium is coming soon — join the waitlist to be first to know when it launches.</p>
         </div>
         <div className="grid md:grid-cols-2 gap-5 max-w-[920px] mx-auto">
           <div className="card-warm border-2 border-nova-border-soft rounded-[36px] p-10">
@@ -290,15 +309,17 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/onboarding" className="w-full justify-center py-3.5 rounded-full font-semibold text-sm inline-flex items-center"
-                    style={{ background: 'linear-gradient(135deg, #F4D6BD, #E8A98B)', color: '#2F2A28' }}>
-                Try Bloom — 14 days free
-              </Link>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 24, marginTop: 4 }}>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 14 }}>
+                  Join the waitlist to be first to know when Premium launches.
+                </p>
+                <WaitlistForm feature="Premium" />
+              </div>
             </div>
           </div>
         </div>
         <p className="text-center text-nova-muted text-sm mt-7 max-w-[56ch] mx-auto leading-relaxed">
-          Cancel anytime. Free plan never expires. Premium subscribers fund the privacy &amp; engineering work that makes the free plan possible.
+          Free plan never expires. Premium subscribers fund the privacy &amp; engineering work that keeps Novana private by design.
         </p>
       </section>
 
@@ -329,8 +350,8 @@ export default function LandingPage() {
           </div>
           <div className="space-y-3">
             <h5 className="font-semibold text-sm">Product</h5>
-            {[['Dashboard', '/dashboard'], ['Today', '/today'], ['Ask Novana', '/ask'], ['Cycle', '/cycle'], ['Monthly Reports', '/reports'], ['Doctor Prep', '/doctor-prep']].map(([l, h]) => (
-              <Link key={l} href={h} className="block text-sm text-nova-muted hover:text-nova-text transition-colors">{l}</Link>
+            {[['How it works', '#how-it-works'], ['Features', '#features'], ['Get started', '/onboarding'], ['Sign in', '/auth/login']].map(([l, h]) => (
+              <a key={l} href={h} className="block text-sm text-nova-muted hover:text-nova-text transition-colors">{l}</a>
             ))}
           </div>
           <div className="space-y-3">
@@ -344,7 +365,7 @@ export default function LandingPage() {
             {[['Our privacy promise', '#manifesto'], ['Account settings', '/setttings'], ['Sign in', '/auth/login']].map(([l, h]) => (
               <a key={l} href={h} className="block text-sm text-nova-muted hover:text-nova-text transition-colors">{l}</a>
             ))}
-            <a href="mailto:hello@novana.app" className="block text-sm text-nova-muted hover:text-nova-text transition-colors">Contact us</a>
+            <a href="mailto:rupsgos@gmail.com" className="block text-sm text-nova-muted hover:text-nova-text transition-colors">Contact us</a>
           </div>
         </div>
         <div className="border-t border-nova-border/30 px-6 py-5 max-w-[1240px] mx-auto flex justify-between text-xs text-nova-muted">

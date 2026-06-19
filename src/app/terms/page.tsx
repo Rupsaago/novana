@@ -201,9 +201,9 @@ export default function TermsPage() {
             </h2>
             <p>
               Questions about these Terms? Contact us at:{' '}
-              <span className="font-medium text-nova-text">
-                [contact@novana.app — add your email here]
-              </span>
+              <a href="mailto:rupsgos@gmail.com" className="font-medium text-nova-purple hover:underline">
+                rupsgos@gmail.com
+              </a>
             </p>
           </section>
 

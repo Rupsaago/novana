@@ -30,8 +30,8 @@ const Icons = {
          className="w-5 h-5">
       <circle cx="12" cy="12" r="10"/>
       <path d="M8 13s1.5 2 4 2 4-2 4-2"/>
-      <line x1="9" y1="9" x2="9.01" y2="9" strokeLinecap="round" strokeWidth="2.5"/>
-      <line x1="15" y1="9" x2="15.01" y2="9" strokeLinecap="round" strokeWidth="2.5"/>
+      <circle cx="9" cy="9.5" r="1.2" fill="currentColor" stroke="none"/>
+      <circle cx="15" cy="9.5" r="1.2" fill="currentColor" stroke="none"/>
     </svg>
   ),
   fatigue: (
@@ -227,13 +227,20 @@ function SymptomRow({
 }
 
 // ── Main SymptomForm ──────────────────────────────────────────────────────────
-export default function SymptomForm() {
+interface SymptomFormProps {
+  onSaved?: () => void
+}
+
+export default function SymptomForm({ onSaved }: SymptomFormProps = {}) {
   const [values, setValues]                   = useState<SymptomData>(DEFAULTS)
   const [submitting, setSubmitting]           = useState(false)
   const [submitted, setSubmitted]             = useState(false)
   const [alreadyLogged, setAlreadyLogged]     = useState(false)
   const [loadingExisting, setLoadingExisting] = useState(true)
   const [error, setError]                     = useState<string | null>(null)
+
+  // Use local timezone date (en-CA gives YYYY-MM-DD format)
+  const localToday = () => new Date().toLocaleDateString('en-CA')
 
   useEffect(() => {
     async function loadTodayEntry() {
@@ -242,7 +249,7 @@ export default function SymptomForm() {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) { setLoadingExisting(false); return }
 
-        const today = new Date().toISOString().split('T')[0]
+        const today = localToday()
         const { data } = await supabase
           .from('symptoms')
           .select('*')
@@ -286,7 +293,7 @@ export default function SymptomForm() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { setError('Not logged in. Please refresh.'); return }
 
-      const today = new Date().toISOString().split('T')[0]
+      const today = localToday()
       const { error: saveError } = await supabase
         .from('symptoms')
         .upsert({
@@ -306,6 +313,7 @@ export default function SymptomForm() {
       if (saveError) throw saveError
       setSubmitted(true)
       setAlreadyLogged(true)
+      onSaved?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {

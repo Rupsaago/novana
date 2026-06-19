@@ -135,25 +135,37 @@ const NavIcons = {
 }
 
 // ── Nav structure ─────────────────────────────────────────────────────────────
-const PRIMARY_TABS = [
-  { href: '/dashboard', label: 'Dashboard',      icon: NavIcons.dashboard  },
-  { href: '/analytics', label: 'Analytics',      icon: NavIcons.analytics  },
-  { href: '/insights',  label: 'AI Insights',    icon: NavIcons.insights   },
-  { href: '/journal',   label: 'Journal',        icon: NavIcons.journal    },
+const NAV_GROUPS = [
+  {
+    label: null,
+    tabs: [
+      { href: '/dashboard', label: 'Dashboard', icon: NavIcons.dashboard },
+      { href: '/today',     label: 'Today',     icon: NavIcons.today     },
+      { href: '/journal',   label: 'Journal',   icon: NavIcons.journal   },
+      { href: '/cycle',     label: 'Cycle',     icon: NavIcons.cycle     },
+    ],
+  },
+  {
+    label: 'Insights',
+    tabs: [
+      { href: '/analytics', label: 'Analytics',   icon: NavIcons.analytics  },
+      { href: '/insights',  label: 'AI Insights', icon: NavIcons.insights   },
+      { href: '/reports',   label: 'Reports',     icon: NavIcons.reports    },
+      { href: '/ask',       label: 'Ask Novana',  icon: NavIcons.ask        },
+    ],
+  },
+  {
+    label: 'Discover',
+    tabs: [
+      { href: '/resources', label: 'Resources', icon: NavIcons.resources },
+      { href: '/calendar',  label: 'Calendar',  icon: NavIcons.calendar  },
+      { href: '/circle',    label: 'Circle',    icon: NavIcons.circle    },
+    ],
+  },
 ]
 
-const SECONDARY_TABS = [
-  { href: '/today',       label: 'Today',           icon: NavIcons.today      },
-  { href: '/cycle',       label: 'Cycle',           icon: NavIcons.cycle      },
-  { href: '/calendar',    label: 'Calendar',        icon: NavIcons.calendar   },
-  { href: '/ask',         label: 'Ask Novana',      icon: NavIcons.ask        },
-  { href: '/resources',   label: 'Resources',       icon: NavIcons.resources  },
-  { href: '/reports',     label: 'Reports',         icon: NavIcons.reports    },
-  { href: '/circle',      label: 'Circle',          icon: NavIcons.circle     },
-  { href: '/connect',     label: 'Connect devices', icon: NavIcons.connect    },
-  { href: '/doctor-prep', label: 'Doctor Prep',     icon: NavIcons.doctorPrep },
-  { href: '/share',       label: 'Share',           icon: NavIcons.share      },
-]
+// Flat list for lookups (page labels, mobile sheet)
+const ALL_NAV_TABS = NAV_GROUPS.flatMap((g) => g.tabs)
 
 const SETTINGS_TAB = { href: '/setttings', label: 'Settings', icon: NavIcons.settings }
 
@@ -197,7 +209,6 @@ function DesktopSidebar({ user, onLogout }: { user: User | null; onLogout: () =>
   const initials    = displayName
     .split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
-  const allTabs = [...PRIMARY_TABS, ...SECONDARY_TABS]
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   return (
@@ -215,32 +226,43 @@ function DesktopSidebar({ user, onLogout }: { user: User | null; onLogout: () =>
         </p>
       </div>
 
-      {/* Primary nav */}
-      <nav className="flex-1 px-4 py-3 space-y-0.5">
-        {allTabs.map((tab) => {
-          const active = isActive(tab.href)
-          return (
-            <Link key={tab.href} href={tab.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl
-                         text-sm transition-all duration-200
-                         ${active
-                           ? 'bg-nova-purple/10 text-nova-purple font-semibold'
-                           : 'text-nova-muted hover:bg-nova-card hover:text-nova-text font-medium'
-                         }`}>
-              <span className={`w-5 flex items-center justify-center shrink-0
-                               ${active ? 'text-nova-purple' : 'text-nova-muted'}`}>
-                {tab.icon}
-              </span>
-              <span>{tab.label}</span>
-              {active && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-nova-purple" />
-              )}
-            </Link>
-          )
-        })}
+      {/* Grouped nav */}
+      <nav className="flex-1 px-4 py-3">
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={gi} className={gi > 0 ? 'mt-4' : ''}>
+            {group.label && (
+              <div className="px-3 mb-1" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nova-muted)', opacity: 0.6, fontWeight: 600 }}>
+                {group.label}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {group.tabs.map((tab) => {
+                const active = isActive(tab.href)
+                return (
+                  <Link key={tab.href} href={tab.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl
+                               text-sm transition-all duration-200
+                               ${active
+                                 ? 'bg-nova-purple/10 text-nova-purple font-semibold'
+                                 : 'text-nova-muted hover:bg-nova-card hover:text-nova-text font-medium'
+                               }`}>
+                    <span className={`w-5 flex items-center justify-center shrink-0
+                                     ${active ? 'text-nova-purple' : 'text-nova-muted'}`}>
+                      {tab.icon}
+                    </span>
+                    <span>{tab.label}</span>
+                    {active && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-nova-purple" />
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
 
         {/* Divider before settings */}
-        <div className="my-1 border-t border-nova-border/20" />
+        <div className="my-3 border-t border-nova-border/20" />
 
         {(() => {
           const active = isActive(SETTINGS_TAB.href)
@@ -314,8 +336,7 @@ function MobileTopBar({ user }: { user: User | null }) {
   const pathname    = usePathname()
   const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? ''
   const initial     = displayName?.[0]?.toUpperCase() ?? 'N'
-  const allTabs     = [...PRIMARY_TABS, ...SECONDARY_TABS, SETTINGS_TAB]
-  const pageLabel   = allTabs.find((t) => t.href === pathname)?.label ?? 'Novana'
+  const pageLabel   = [...ALL_NAV_TABS, SETTINGS_TAB].find((t) => t.href === pathname)?.label ?? 'Novana'
 
   return (
     <header className="lg:hidden flex items-center justify-between
@@ -338,7 +359,7 @@ function MobileMoreSheet({ open, onClose, pathname }: {
   open: boolean; onClose: () => void; pathname: string
 }) {
   if (!open) return null
-  const extraTabs = [...PRIMARY_TABS.slice(1), ...SECONDARY_TABS, SETTINGS_TAB]
+  const extraTabs = [...ALL_NAV_TABS, SETTINGS_TAB]
     .filter(t => !MOBILE_PRIMARY.some(p => p.href === t.href))
 
   return (
@@ -383,7 +404,7 @@ function BottomTabBar() {
   // Close sheet when navigating
   useEffect(() => { setMoreOpen(false) }, [pathname])
 
-  const isMoreActive = [...SECONDARY_TABS, SETTINGS_TAB, ...PRIMARY_TABS.slice(1)]
+  const isMoreActive = [...ALL_NAV_TABS, SETTINGS_TAB]
     .filter(t => !MOBILE_PRIMARY.some(p => p.href === t.href))
     .some(t => pathname === t.href)
 

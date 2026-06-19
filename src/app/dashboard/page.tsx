@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const [showDetail, setShowDetail]   = useState(false)
   const [saved, setSaved]             = useState(false)
   const [skipped, setSkipped]         = useState(false)
+  const [lastSaved, setLastSaved]     = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -104,7 +105,7 @@ export default function DashboardPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [lastSaved])
 
   function handleSave() {
     setSaved(true)
@@ -143,8 +144,7 @@ export default function DashboardPage() {
               <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>Today</div>
               <p className="font-display" style={{ color: '#fff', fontSize: 18, fontWeight: 400, lineHeight: 1.3, margin: 0 }}>Soft consistency.</p>
               <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
-                Five check-ins this week, mood steady around <span className="hl-peach">7</span>. Sleep is the{' '}
-                <span className="hl-rose">lever to lean on</span> next.
+                Five check-ins this week, mood steady around <span className="hl-peach">7</span>. Sleep is the <span className="hl-rose">lever to lean on</span> next.
               </p>
               <p className="disclaimer" style={{ color: 'rgba(255,255,255,0.45)', marginTop: 10 }}>Educational only — not medical advice.</p>
             </div>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
               <div className="animate-fade-up" style={{ marginTop: 26, paddingTop: 22, borderTop: '1px solid var(--nova-border-soft)' }}>
                 <h3 className="font-display" style={{ fontSize: 18, margin: '0 0 4px' }}>Detailed log</h3>
                 <p style={{ fontSize: 13, color: 'var(--nova-muted)', marginBottom: 18 }}>Slide each one to rate. Skip what doesn&apos;t apply.</p>
-                <SymptomForm />
+                <SymptomForm onSaved={() => setLastSaved(n => n + 1)} />
               </div>
             )}
           </section>
@@ -313,7 +313,7 @@ export default function DashboardPage() {
                 {[
                   { label: 'Mood',   val: averages?.avg_mood ?? '—',        unit: '/10', color: '#7B6FA8', bg: '#EAE0F2', delta: '↑ 1 from yesterday', deltaColor: 'var(--nova-purple-dark)',
                     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg> },
-                  { label: 'Energy', val: averages?.avg_fatigue ?? '—',     unit: '%',   color: '#A87155', bg: '#F1D7C5', delta: '↓ 4 from yesterday', deltaColor: '#A87155',
+                  { label: 'Energy', val: averages?.avg_fatigue ?? '—',     unit: '/10', color: '#A87155', bg: '#F1D7C5', delta: '↓ 4 from yesterday', deltaColor: '#A87155',
                     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m13 2-9 12h7l-1 8 9-12h-7z"/></svg> },
                   { label: 'Sleep',  val: averages?.avg_sleep_hours ?? '—', unit: 'h',   color: '#5A6F8F', bg: '#D9E0EC', delta: '→ Steady', deltaColor: '#5A6F8F',
                     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg> },

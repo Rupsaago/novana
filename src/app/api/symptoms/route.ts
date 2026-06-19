@@ -101,9 +101,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Build the row to insert/update
+    // Use client-provided date if valid (fixes UTC/local timezone mismatch)
+    const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+    const clientDate = typeof body.logged_at === 'string' && DATE_RE.test(body.logged_at)
+      ? body.logged_at
+      : new Date().toISOString().split('T')[0]
+
     const symptomData: SymptomInsert = {
       user_id:       session.user.id,
-      logged_at:     new Date().toISOString().split('T')[0], // "2026-05-14"
+      logged_at:     clientDate,
       mood:          body.mood,
       fatigue:       body.fatigue,
       sleep_hours:   body.sleep_hours,
