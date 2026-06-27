@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import type { SymptomRow } from '@/types/database'
+import SymptomForm from '@/components/SymptomForm'
 
 type Daypart = 'morning' | 'day' | 'evening' | 'night'
 
@@ -87,6 +88,10 @@ export default function TodayPage() {
   const [savedMorning, setSavedMorning]   = useState(false)
   const [savedEvening, setSavedEvening]   = useState(false)
   const [existing, setExisting]           = useState<SymptomRow | null>(null)
+  const [showFullLog, setShowFullLog]     = useState(false)
+  const [weekDots, setWeekDots]           = useState<boolean[]>([false,false,false,false,false,false,false])
+  const [weekCount, setWeekCount]         = useState(0)
+  const fullLogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const dp  = getDaypart()
@@ -95,34 +100,40 @@ export default function TodayPage() {
     setDateStr(`${DAYS[now.getDay()].toUpperCase()} · ${MONTHS[now.getMonth()].toUpperCase()} ${now.getDate()}`)
     setChipDate(`${MONTHS[now.getMonth()].slice(0, 3).toUpperCase()} ${now.getDate()}`)
 
-    // Load user name from profile
+    // Load profile, today's entry, and week dots from Supabase
     const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) return
-      supabase
-        .from('profiles').select('display_name, full_name')
-        .eq('id', session.user.id).single()
-        .then(({ data }) => {
-          const raw = data?.display_name ?? data?.full_name ??
-            session.user.user_metadata?.full_name ??
-            session.user.email?.split('@')[0] ?? 'Nova'
-          setFirstName(raw.split(' ')[0])
-        })
-    })
-
-    // Load today's existing entry to pre-fill
-    fetch('/api/symptoms?days=1')
-      .then(r => r.json())
-      .then((json: { data?: SymptomRow[] }) => {
-        const today = now.toISOString().split('T')[0]
-        const entry = json.data?.find(r => r.logged_at === today)
-        if (entry) {
-          setExisting(entry)
-          setSelectedMood(scoreToMoodKey(entry.mood))
-          if (entry.notes) setIntention(entry.notes)
-        }
+      // Profile name
+      const { data: prof } = await supabase
+        .from('profiles').select('display_name, full_name').eq('id', session.user.id).single()
+      const raw = prof?.display_name ?? prof?.full_name ??
+        session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0] ?? 'Nova'
+      setFirstName(raw.split(' ')[0])
+      // Today's entry
+      const todayStr = now.toLocaleDateString('en-CA')
+      const { data: todayEntry } = await supabase
+        .from('symptoms').select('*').eq('user_id', session.user.id).eq('logged_at', todayStr).single()
+      if (todayEntry) {
+        setExisting(todayEntry as SymptomRow)
+        setSelectedMood(scoreToMoodKey((todayEntry as Record<string, unknown>).mood as number))
+        if ((todayEntry as Record<string, unknown>).notes) setIntention(String((todayEntry as Record<string, unknown>).notes))
+      }
+      // Week dots (Sun–Sat of current week)
+      const dayOfWeek = now.getDay()
+      const weekStart = new Date(now); weekStart.setDate(now.getDate() - dayOfWeek)
+      const weekStartStr = weekStart.toLocaleDateString('en-CA')
+      const { data: weekData } = await supabase
+        .from('symptoms').select('logged_at').eq('user_id', session.user.id)
+        .gte('logged_at', weekStartStr).lte('logged_at', todayStr)
+      const loggedSet = new Set(weekData?.map((r: Record<string,unknown>) => r.logged_at) ?? [])
+      const dots = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(weekStart); d.setDate(weekStart.getDate() + i)
+        return loggedSet.has(d.toLocaleDateString('en-CA'))
       })
-      .catch(() => {})
+      setWeekDots(dots)
+      setWeekCount(dots.filter(Boolean).length)
+    })
   }, [])
 
   const scene = SCENE[daypart]
@@ -134,6 +145,7 @@ export default function TodayPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          logged_at:     new Date().toLocaleDateString('en-CA'),
           mood:          MOOD_SCORE[selectedMood ?? 'ok'] ?? 6,
           fatigue:       existing?.fatigue       ?? 5,
           sleep_hours:   existing?.sleep_hours   ?? 7,
@@ -146,6 +158,7 @@ export default function TodayPage() {
         }),
       })
       setSavedMorning(true)
+      setWeekCount((n) => n + 1)
       setTimeout(() => setSavedMorning(false), 2500)
     } catch {}
     setSavingMorning(false)
@@ -158,6 +171,7 @@ export default function TodayPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          logged_at:     new Date().toLocaleDateString('en-CA'),
           mood:          MOOD_SCORE[selectedMood ?? 'ok'] ?? 6,
           fatigue:       existing?.fatigue       ?? 5,
           sleep_hours:   existing?.sleep_hours   ?? 7,
@@ -306,22 +320,24 @@ export default function TodayPage() {
             <button onClick={handleSaveMorning} disabled={savingMorning} style={warmBtn}>
               {savingMorning ? 'Saving…' : savedMorning ? 'Saved ✿' : 'Save morning →'}
             </button>
-            <Link href="/dashboard" style={softBtn}>Full log</Link>
+            <button onClick={() => { setShowFullLog(!showFullLog); setTimeout(() => fullLogRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }} style={softBtn}>
+              {showFullLog ? 'Hide sliders ↑' : 'Full log'}
+            </button>
           </div>
           <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--nova-border-soft)' }}>
             <div>
               <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginBottom: 6 }}>This week&apos;s mornings</div>
               <div style={{ display: 'flex', gap: 5 }}>
-                {[true, true, true, false, true, true, 'today'].map((d, i) => (
+                {weekDots.map((logged, i) => (
                   <span key={i} style={{
                     width: 10, height: 10, borderRadius: '50%', display: 'inline-block',
-                    background: d === 'today' ? 'var(--nova-purple)' : d ? 'linear-gradient(135deg,#E8A98B,#D28CA7)' : 'var(--nova-border)',
-                    boxShadow: d === 'today' ? '0 0 0 3px rgba(123,111,168,0.18)' : d ? '0 0 6px rgba(232,169,139,0.4)' : 'none',
+                    background: logged ? 'linear-gradient(135deg,#E8A98B,#D28CA7)' : 'var(--nova-border)',
+                    boxShadow: logged ? '0 0 6px rgba(232,169,139,0.4)' : 'none',
                   }} />
                 ))}
               </div>
             </div>
-            <div style={{ marginLeft: 'auto', fontFamily: 'var(--font-fraunces)', fontStyle: 'italic', fontSize: 14, color: 'var(--nova-muted)' }}>5 of 7</div>
+            <div style={{ marginLeft: 'auto', fontFamily: 'var(--font-fraunces)', fontStyle: 'italic', fontSize: 14, color: 'var(--nova-muted)' }}>{weekCount} of 7</div>
           </div>
         </section>
 
@@ -374,19 +390,28 @@ export default function TodayPage() {
             <div>
               <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginBottom: 6 }}>This week&apos;s evenings</div>
               <div style={{ display: 'flex', gap: 5 }}>
-                {[true, false, true, true, false, true, false].map((d, i) => (
+                {weekDots.map((logged, i) => (
                   <span key={i} style={{
                     width: 10, height: 10, borderRadius: '50%', display: 'inline-block',
-                    background: d ? 'linear-gradient(135deg,#E8A98B,#D28CA7)' : 'var(--nova-border)',
-                    boxShadow: d ? '0 0 6px rgba(232,169,139,0.4)' : 'none',
+                    background: logged ? 'linear-gradient(135deg,#B8A5D2,#8A7BA8)' : 'var(--nova-border)',
+                    boxShadow: logged ? '0 0 6px rgba(168,158,208,0.4)' : 'none',
                   }} />
                 ))}
               </div>
             </div>
-            <div style={{ marginLeft: 'auto', fontFamily: 'var(--font-fraunces)', fontStyle: 'italic', fontSize: 14, color: 'var(--nova-muted)' }}>4 of 7</div>
+            <div style={{ marginLeft: 'auto', fontFamily: 'var(--font-fraunces)', fontStyle: 'italic', fontSize: 14, color: 'var(--nova-muted)' }}>{weekCount} of 7</div>
           </div>
         </section>
       </div>
+
+      {/* Full symptom log (collapsible) */}
+      {showFullLog && (
+        <div ref={fullLogRef} style={{ borderRadius: 'var(--radius-lg)', background: 'var(--nova-card-2)', border: '1px solid var(--nova-border-soft)', padding: 28, marginBottom: 32 }}>
+          <h3 className="font-display" style={{ fontSize: 22, fontWeight: 400, margin: '0 0 4px' }}>Full symptom log</h3>
+          <p style={{ fontSize: 13, color: 'var(--nova-muted)', marginBottom: 20 }}>Slide each one to rate. Skip what doesn&apos;t apply.</p>
+          <SymptomForm onSaved={() => { setShowFullLog(false); setWeekCount((n) => n + 1) }} />
+        </div>
+      )}
 
       {/* Pattern strip */}
       <section style={{

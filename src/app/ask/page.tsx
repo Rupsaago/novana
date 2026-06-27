@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase'
 
 interface Message {
   role: 'nova' | 'you'
@@ -29,12 +30,51 @@ export default function AskPage() {
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [context, setContext] = useState({
+    cycleDay: '—', phase: '—', mood7d: '—', sleep7d: '—', stress7d: '—', movement: '—',
+  })
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages])
+
+  useEffect(() => {
+    async function loadContext() {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      // 7-day averages from the view
+      const { data: avg } = await supabase
+        .from('symptom_averages_30d').select('*').eq('user_id', session.user.id).single()
+      // Last 7 days for movement count
+      const ago7 = new Date(); ago7.setDate(ago7.getDate() - 7)
+      const { data: recent } = await supabase
+        .from('symptoms').select('exercise_mins, cycle_status, logged_at')
+        .eq('user_id', session.user.id).gte('logged_at', ago7.toLocaleDateString('en-CA'))
+        .order('logged_at', { ascending: false })
+      const movementDays = recent?.filter((r) => ((r.exercise_mins as number) ?? 0) > 0).length ?? 0
+      // Cycle day from last menstrual entry
+      const { data: menstrual } = await supabase
+        .from('symptoms').select('logged_at').eq('user_id', session.user.id)
+        .eq('cycle_status', 'menstrual').order('logged_at', { ascending: false }).limit(1)
+      let cycleDay = '—', phase = '—'
+      if (menstrual?.[0]) {
+        const start = new Date(menstrual[0].logged_at as string)
+        const diff = Math.floor((Date.now() - start.getTime()) / 86400000) + 1
+        cycleDay = `${diff} of 28`
+        phase = diff <= 5 ? 'Menstrual' : diff <= 13 ? 'Follicular' : diff <= 16 ? 'Ovulatory' : 'Luteal'
+      }
+      setContext({
+        cycleDay,
+        phase,
+        mood7d:   avg?.avg_mood        ? `${Number(avg.avg_mood).toFixed(1)} / 10` : '—',
+        sleep7d:  avg?.avg_sleep_hours ? `${Number(avg.avg_sleep_hours).toFixed(1)}h` : '—',
+        stress7d: avg?.avg_stress      ? `${Number(avg.avg_stress).toFixed(1)} / 10` : '—',
+        movement: `${movementDays} of 7 days`,
+      })
+    }
+    loadContext()
+  }, [])
 
   function autosize() {
     const ta = textareaRef.current
@@ -285,12 +325,12 @@ export default function AskPage() {
               What I&apos;m seeing
             </h4>
             {[
-              { label: 'Cycle day', value: '8 of 28' },
-              { label: 'Phase', value: 'Follicular' },
-              { label: 'Mood (7d avg)', value: '6.2 / 10' },
-              { label: 'Sleep (7d avg)', value: '5.4 / 10' },
-              { label: 'Stress (7d avg)', value: '5.8 / 10' },
-              { label: 'Movement', value: '4 of 7 days' },
+              { label: 'Cycle day', value: context.cycleDay },
+              { label: 'Phase', value: context.phase },
+              { label: 'Mood (7d avg)', value: context.mood7d },
+              { label: 'Sleep (7d avg)', value: context.sleep7d },
+              { label: 'Stress (7d avg)', value: context.stress7d },
+              { label: 'Movement', value: context.movement },
             ].map((row, i, arr) => (
               <div key={row.label} style={{
                 display: 'flex', justifyContent: 'space-between', padding: '8px 0',

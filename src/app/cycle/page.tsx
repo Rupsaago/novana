@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 
 const phases = [
   {
@@ -58,28 +59,83 @@ function addDays(days: number) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
 }
 
+function calcPhase(day: number) {
+  return day <= 5 ? 'menstrual' : day <= 13 ? 'follicular' : day <= 16 ? 'ovulatory' : 'luteal'
+}
+
 export default function CyclePage() {
   const [activePhase, setActivePhase] = useState('follicular')
   const [cycleDay, setCycleDay]       = useState(8)
   const [phaseName, setPhaseName]     = useState('follicular')
+  const [cycleLength, setCycleLength] = useState(28)
+  const [noData, setNoData]           = useState(false)
 
   useEffect(() => {
-    fetch('/api/symptoms?days=60')
-      .then(r => r.json())
-      .then((json: { data?: Array<{ logged_at: string; cycle_status: string }> }) => {
-        const rows = (json.data ?? []).sort((a, b) => b.logged_at.localeCompare(a.logged_at))
-        const today = new Date(); today.setHours(0, 0, 0, 0)
-        const lastFlow = rows.find(r => r.cycle_status !== 'none')
-        if (!lastFlow) return
-        const flowDate = new Date(lastFlow.logged_at + 'T00:00:00')
-        const day = Math.floor((today.getTime() - flowDate.getTime()) / 86400000) + 1
-        const clamped = Math.max(1, Math.min(day, 28))
-        const phase = clamped <= 5 ? 'menstrual' : clamped <= 13 ? 'follicular' : clamped <= 16 ? 'ovulatory' : 'luteal'
-        setCycleDay(clamped)
+    async function load() {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+
+      // 1. Load profile: period_start_date, cycle_length, period_length
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('period_start_date, cycle_length')
+        .eq('id', session.user.id)
+        .single()
+
+      const len = profile?.cycle_length ?? 28
+      setCycleLength(len)
+      let periodStart = profile?.period_start_date as string | null ?? null
+
+      // 2. Fetch recent symptom logs to find / auto-update period start
+      const todayStr = new Date().toLocaleDateString('en-CA')
+      const { data: symptoms } = await supabase
+        .from('symptoms')
+        .select('logged_at, cycle_status')
+        .eq('user_id', session.user.id)
+        .in('cycle_status', ['heavy', 'moderate', 'light', 'spotting'])
+        .order('logged_at', { ascending: false })
+        .limit(20)
+
+      if (symptoms?.length) {
+        // Walk backwards to find the start of the most recent flow streak
+        const sorted = [...symptoms].sort((a, b) => b.logged_at.localeCompare(a.logged_at))
+        const mostRecentFlowDate = sorted[0].logged_at as string
+
+        // Find earliest consecutive day in this flow streak
+        let streakStart = mostRecentFlowDate
+        const allDates = new Set(sorted.map(s => s.logged_at as string))
+        let cursor = new Date(mostRecentFlowDate + 'T00:00:00')
+        while (true) {
+          cursor.setDate(cursor.getDate() - 1)
+          const prev = cursor.toLocaleDateString('en-CA')
+          if (allDates.has(prev)) { streakStart = prev } else { break }
+        }
+
+        // Auto-update profile if this flow start is newer than stored
+        if (!periodStart || streakStart > periodStart) {
+          periodStart = streakStart
+          await supabase.from('profiles')
+            .update({ period_start_date: streakStart, updated_at: new Date().toISOString() })
+            .eq('id', session.user.id)
+        }
+      }
+
+      // 3. Calculate cycle day
+      if (periodStart) {
+        const startDate = new Date(periodStart + 'T00:00:00')
+        const now = new Date(); now.setHours(0, 0, 0, 0)
+        const daysSince = Math.floor((now.getTime() - startDate.getTime()) / 86400000)
+        const day = Math.max(1, (daysSince % len) + 1)
+        const phase = calcPhase(day)
+        setCycleDay(day)
         setPhaseName(phase)
         setActivePhase(phase)
-      })
-      .catch(() => {})
+      } else {
+        setNoData(true)
+      }
+    }
+    load()
   }, [])
 
   return (
@@ -122,7 +178,8 @@ export default function CyclePage() {
 
         <div style={{ position: 'relative', zIndex: 2 }}>
           <span className="chip" style={{ background: 'rgba(255,255,255,0.78)', borderColor: 'rgba(255,255,255,0.9)' }}>
-            <i className="dot" style={{ background: 'var(--nova-peach)' }} /> Day {cycleDay} of 28
+            <i className="dot" style={{ background: 'var(--nova-peach)' }} />
+            {noData ? 'Set your period start in Settings' : `Day ${cycleDay} of ${cycleLength}`}
           </span>
           <h1 style={{
             fontFamily: 'var(--font-fraunces)',
@@ -178,7 +235,7 @@ export default function CyclePage() {
             {/* Outer ring */}
             <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" />
             {/* Day marker — rotated based on current cycle day */}
-            <g transform={`rotate(${Math.round((cycleDay - 1) * 360 / 28)} 100 100)`}>
+            <g transform={`rotate(${Math.round((cycleDay - 1) * 360 / cycleLength)} 100 100)`}>
               <line x1="100" y1="20" x2="100" y2="6" stroke="#2F2A28" strokeWidth="2" strokeLinecap="round" />
               <circle cx="100" cy="12" r="6" fill="#fff" stroke="#2F2A28" strokeWidth="1.5" />
             </g>
@@ -433,9 +490,9 @@ export default function CyclePage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginTop: 18 }}>
           {(() => {
-            const ovulIn   = getDaysUntil(cycleDay, 14)
-            const lutealIn = getDaysUntil(cycleDay, 17)
-            const nextIn   = getDaysUntil(cycleDay, 28) + 1
+            const ovulIn   = getDaysUntil(cycleDay, 14, cycleLength)
+            const lutealIn = getDaysUntil(cycleDay, 17, cycleLength)
+            const nextIn   = getDaysUntil(cycleDay, cycleLength, cycleLength) + 1
             return [
               { when: `IN ${ovulIn} DAYS · ${addDays(ovulIn)}`, what: 'Ovulation window opens', why: 'Energy peaks. Libido often rises. Most fertile 24 hours.' },
               { when: `IN ${lutealIn} DAYS · ${addDays(lutealIn)}`, what: 'Luteal phase begins', why: 'Progesterone climbs. Inward turn — focus may sharpen.' },
@@ -472,7 +529,7 @@ export default function CyclePage() {
           </h4>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--nova-muted)', lineHeight: 1.55 }}>
             This timeline is built for &ldquo;average&rdquo; cycles, which most of us don&apos;t have. PMOS, perimenopause, hormonal contraception, stress, and dozens of other reasons can scramble it. Novana still works — we just lean more on what you log, less on calendar math.{' '}
-            <Link href="/setttings" style={{ color: 'var(--nova-purple-dark)', fontWeight: 500 }}>Open your cycle settings</Link>{' '}
+            <Link href="/settings" style={{ color: 'var(--nova-purple-dark)', fontWeight: 500 }}>Open your cycle settings</Link>{' '}
             to adjust.
           </p>
         </div>

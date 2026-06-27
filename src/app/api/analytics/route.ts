@@ -15,16 +15,18 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') ?? '30', 10)
+    const days  = parseInt(searchParams.get('days') ?? '30', 10)
+    const today = searchParams.get('today') ?? undefined   // YYYY-MM-DD from client
 
     const supabase = createServerClientInstance()
 
     // Fetch symptoms oldest-first so charts read left→right chronologically
+    const dateFrom = getDateDaysAgo(days, today)
     const { data: symptoms, error } = await supabase
       .from('symptoms')
       .select('*')
       .eq('user_id', session.user.id)
-      .gte('logged_at', getDateDaysAgo(days))
+      .gte('logged_at', dateFrom)
       .order('logged_at', { ascending: true })
 
     if (error) throw error
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     console.log('[GET /api/analytics]', {
       userId: session.user.id,
       days,
-      dateFrom: getDateDaysAgo(days),
+      dateFrom,
       rowCount: symptoms?.length ?? 0,
       sample: symptoms?.[0] ?? null,
     })
@@ -69,8 +71,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getDateDaysAgo(days: number): string {
-  const d = new Date()
+// today is an optional YYYY-MM-DD from the client (local timezone).
+// Falls back to UTC server date only when not provided.
+function getDateDaysAgo(days: number, today?: string): string {
+  const d = today ? new Date(today) : new Date()
   d.setDate(d.getDate() - days)
-  return d.toISOString().split('T')[0]
+  return today
+    ? d.toLocaleDateString('en-CA')   // keeps local date arithmetic correct
+    : d.toISOString().split('T')[0]
 }

@@ -50,14 +50,38 @@ export default function JournalPage() {
   const [error, setError]             = useState<string | null>(null)
   const [selectedMood, setSelectedMood] = useState('Soft')
   const [activeTags, setActiveTags]   = useState<Set<string>>(new Set(['rest', 'cycle phase', 'gratitude']))
+  const [journalSummary, setJournalSummary] = useState<string | null>(null)
+  const [loadingSummary, setLoadingSummary] = useState(false)
+  const [showAllEntries, setShowAllEntries] = useState(false)
 
   useEffect(() => {
     fetch('/api/journal')
       .then((r) => r.json())
-      .then((j) => { if (j.data) setEntries(j.data) })
+      .then((j) => {
+        if (j.data) {
+          setEntries(j.data)
+          // Auto-load summary if there are entries
+          if (j.data.length >= 2) autoSummarise(j.data)
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  async function autoSummarise(entriesData: typeof entries) {
+    if (loadingSummary || journalSummary) return
+    setLoadingSummary(true)
+    try {
+      const combined = entriesData.slice(0, 7).map((e) => e.content).join('\n\n---\n\n')
+      const res = await fetch('/api/journal', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'summarise', content: combined }),
+      })
+      const json = await res.json()
+      if (json.summary) setJournalSummary(json.summary)
+    } catch {}
+    setLoadingSummary(false)
+  }
 
   useEffect(() => {
     const draft = localStorage.getItem('journal_draft')
@@ -68,7 +92,7 @@ export default function JournalPage() {
     if (!content.trim()) return
     setSaving(true); setError(null)
     try {
-      const res  = await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) })
+      const res  = await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, mood: selectedMood, tags: Array.from(activeTags) }) })
       const json = await res.json()
       if (!res.ok) { setError(json.error ?? 'Failed to save.'); return }
       setEntries((prev) => [json.data, ...prev])
@@ -197,15 +221,21 @@ export default function JournalPage() {
                 <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Last 7 entries</span>
               </div>
               <h3 className="font-display" style={{ color: '#fff', fontSize: 22, fontWeight: 400, margin: '14px 0 10px', lineHeight: 1.3, position: 'relative', zIndex: 1 }}>
-                A softer week, with warmth at the edges.
+                {loadingSummary ? 'Reading your week…' : journalSummary ? 'Your emotional week.' : 'A softer week, with warmth at the edges.'}
               </h3>
-              <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 1.6, margin: '0 0 12px', position: 'relative', zIndex: 1 }}>
-                Your entries this week carried recurring threads of <em style={{ background: 'rgba(232,169,139,0.32)', padding: '1px 4px', borderRadius: 4, fontStyle: 'normal' }}>rest</em>,{' '}
-                <em style={{ background: 'rgba(232,169,139,0.32)', padding: '1px 4px', borderRadius: 4, fontStyle: 'normal' }}>gratitude</em>, and family.
-              </p>
-              <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 1.6, margin: '0 0 12px', position: 'relative', zIndex: 1 }}>
-                Tonight&apos;s entry leans toward <em style={{ background: 'rgba(232,169,139,0.32)', padding: '1px 4px', borderRadius: 4, fontStyle: 'normal' }}>soft and hopeful</em> — a tone Novana has seen most on follicular-phase evenings.
-              </p>
+              {loadingSummary ? (
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, position: 'relative', zIndex: 1 }}>Novana is reading your recent entries…</p>
+              ) : journalSummary ? (
+                <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 1.6, margin: '0 0 12px', position: 'relative', zIndex: 1 }}>{journalSummary}</p>
+              ) : (
+                <>
+                  <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 1.6, margin: '0 0 12px', position: 'relative', zIndex: 1 }}>
+                    Your entries this week carried recurring threads of <em style={{ background: 'rgba(232,169,139,0.32)', padding: '1px 4px', borderRadius: 4, fontStyle: 'normal' }}>rest</em>,{' '}
+                    <em style={{ background: 'rgba(232,169,139,0.32)', padding: '1px 4px', borderRadius: 4, fontStyle: 'normal' }}>gratitude</em>, and family.
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, position: 'relative', zIndex: 1 }}>Write a couple of entries and Novana will summarise them here.</p>
+                </>
+              )}
               <Link href="/insights" style={{ marginTop: 8, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '8px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer', position: 'relative', zIndex: 1, textDecoration: 'none', display: 'inline-block' }}>
                 View full insights →
               </Link>
@@ -234,7 +264,9 @@ export default function JournalPage() {
             <div className="card" style={{ padding: 22 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <h3 className="font-display" style={{ fontSize: 20, fontWeight: 400, margin: 0 }}>Recent entries</h3>
-                <span style={{ fontSize: 12, color: 'var(--nova-muted)' }}>All →</span>
+                <button onClick={() => setShowAllEntries(!showAllEntries)} style={{ fontSize: 12, color: 'var(--nova-purple)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  {showAllEntries ? 'Less ↑' : 'All →'}
+                </button>
               </div>
 
               {loading ? (
@@ -261,7 +293,7 @@ export default function JournalPage() {
                 </>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {entries.slice(0, 4).map((e) => {
+                  {(showAllEntries ? entries : entries.slice(0, 4)).map((e) => {
                     const d = new Date(e.created_at)
                     const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
                     const preview = e.content.slice(0, 100)

@@ -1,8 +1,20 @@
 ﻿'use client'
 import { useState } from 'react'
 import Image from 'next/image'
+import ComingSoonPage from '@/components/ComingSoonPage'
+
+const SHOW_PREVIEW = false
 
 export default function ReportsPage() {
+  if (!SHOW_PREVIEW) {
+    return (
+      <ComingSoonPage
+        title="Monthly Reports"
+        feature="Monthly Reports"
+        description="A quiet letter about your month — patterns noticed, themes that recurred, what your body was asking for."
+      />
+    )
+  }
   const [emailEnabled, setEmailEnabled] = useState(false)
 
   return (

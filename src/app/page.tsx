@@ -362,7 +362,7 @@ export default function LandingPage() {
           </div>
           <div className="space-y-3">
             <h5 className="font-semibold text-sm">Privacy &amp; Help</h5>
-            {[['Our privacy promise', '#manifesto'], ['Account settings', '/setttings'], ['Sign in', '/auth/login']].map(([l, h]) => (
+            {[['Our privacy promise', '/privacy'], ['Account settings', '/settings'], ['Sign in', '/auth/login']].map(([l, h]) => (
               <a key={l} href={h} className="block text-sm text-nova-muted hover:text-nova-text transition-colors">{l}</a>
             ))}
             <a href="mailto:rupsgos@gmail.com" className="block text-sm text-nova-muted hover:text-nova-text transition-colors">Contact us</a>

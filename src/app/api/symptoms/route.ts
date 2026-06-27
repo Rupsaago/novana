@@ -41,18 +41,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 2. Read optional ?days= query param
+    // 2. Read optional query params
     const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') ?? '30', 10)
+    const days  = parseInt(searchParams.get('days') ?? '30', 10)
+    const today = searchParams.get('today') ?? undefined  // YYYY-MM-DD from client
 
     // 3. Query Supabase
     const supabase = createServerClientInstance()
     const { data, error } = await supabase
       .from('symptoms')
-      .select('*')                          // get all columns
-      .eq('user_id', session.user.id)       // only this user's rows
-      .gte('logged_at', getDateDaysAgo(days)) // only last N days
-      .order('logged_at', { ascending: false }) // newest first
+      .select('*')                               // get all columns
+      .eq('user_id', session.user.id)            // only this user's rows
+      .gte('logged_at', getDateDaysAgo(days, today)) // only last N days
+      .order('logged_at', { ascending: false })  // newest first
 
     if (error) throw error
 
@@ -173,8 +174,12 @@ function validateSymptomData(body: Record<string, unknown>) {
 }
 
 // ── Helper: date N days ago as "YYYY-MM-DD" string ───────────────────────────
-function getDateDaysAgo(days: number): string {
-  const d = new Date()
+// today is an optional YYYY-MM-DD from the client (local timezone).
+// Falls back to UTC server date only when not provided.
+function getDateDaysAgo(days: number, today?: string): string {
+  const d = today ? new Date(today) : new Date()
   d.setDate(d.getDate() - days)
-  return d.toISOString().split('T')[0]
+  return today
+    ? d.toLocaleDateString('en-CA')
+    : d.toISOString().split('T')[0]
 }

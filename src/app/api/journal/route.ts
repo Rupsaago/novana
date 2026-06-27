@@ -102,9 +102,11 @@ Always end with one short encouraging sentence.`,
       )
     }
 
-    const entry: JournalInsert = {
+    const entry: JournalInsert & { mood?: string; tags?: string[] } = {
       user_id: session.user.id,
       content: body.content.trim(),
+      ...(body.mood  ? { mood: String(body.mood) } : {}),
+      ...(Array.isArray(body.tags) ? { tags: body.tags } : {}),
     }
 
     const supabase = createServerClientInstance()

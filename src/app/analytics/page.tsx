@@ -45,7 +45,8 @@ export default function AnalyticsPage() {
     async function loadData() {
       setLoading(true); setError(null)
       try {
-        const res = await fetch(`/api/analytics?days=${days}`)
+        const today = new Date().toLocaleDateString('en-CA')
+        const res = await fetch(`/api/analytics?days=${days}&today=${today}`)
         const json = await res.json()
         if (!res.ok) { setError(json.error ?? 'Failed to load analytics.'); return }
         console.log('[Analytics] data fetched:', {

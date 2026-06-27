@@ -123,6 +123,7 @@ const THEMES = [
 
 const NAV_ITEMS = [
   { href: '#profile',      label: 'Profile'            },
+  { href: '#cycle',        label: 'Cycle'              },
   { href: '#privacy',      label: 'Privacy'            },
   { href: '#notifs',       label: 'Notifications'      },
   { href: '#theme',        label: 'Theme'              },
@@ -147,10 +148,12 @@ export default function SettingsPage() {
   const [editMode, setEditMode]         = useState(false)
   const [displayName, setDisplayName]   = useState('')
   const [pronouns, setPronouns]         = useState('')
-  const [cycleLength, setCycleLength]   = useState(28)
-  const [periodLength, setPeriodLength] = useState(5)
-  const [joinedAt, setJoinedAt]         = useState('')
-  const [savingProfile, setSavingProfile] = useState(false)
+  const [cycleLength, setCycleLength]       = useState(28)
+  const [periodLength, setPeriodLength]     = useState(5)
+  const [periodStartDate, setPeriodStartDate] = useState('')
+  const [joinedAt, setJoinedAt]             = useState('')
+  const [savingProfile, setSavingProfile]   = useState(false)
+  const [savingCycle, setSavingCycle]       = useState(false)
 
   // ── privacy / notification prefs ───
   const [prefs, setPrefs] = useState({
@@ -211,6 +214,7 @@ export default function SettingsPage() {
         setPronouns(profile.pronouns ?? '')
         setCycleLength(profile.cycle_length ?? 28)
         setPeriodLength(profile.period_length ?? 5)
+        setPeriodStartDate(profile.period_start_date ?? '')
         setJoinedAt(profile.created_at)
       }
 
@@ -280,20 +284,42 @@ export default function SettingsPage() {
   async function saveProfile() {
     if (!userId) return
     setSavingProfile(true)
+    const { data: { session } } = await supabase.auth.getSession()
     const { error } = await supabase
       .from('profiles')
-      .update({
+      .upsert({
+        id:            userId,
+        email:         session?.user.email ?? email,
         display_name:  displayName.trim() || null,
         pronouns:      pronouns.trim() || null,
         cycle_length:  cycleLength,
         period_length: periodLength,
         updated_at:    new Date().toISOString(),
-      })
-      .eq('id', userId)
+      }, { onConflict: 'id' })
     setSavingProfile(false)
     if (error) { addToast('Failed to save profile.', 'error'); return }
     addToast('Profile saved.', 'success')
     setEditMode(false)
+  }
+
+  // ── cycle save ───
+  async function saveCycle() {
+    if (!userId) return
+    setSavingCycle(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id:                userId,
+        email:             session?.user.email ?? email,
+        period_start_date: periodStartDate || null,
+        cycle_length:      cycleLength,
+        period_length:     periodLength,
+        updated_at:        new Date().toISOString(),
+      }, { onConflict: 'id' })
+    setSavingCycle(false)
+    if (error) { addToast(`Save failed: ${error.message}`, 'error'); return }
+    addToast('Cycle settings saved.', 'success')
   }
 
   // ── theme ───
@@ -515,6 +541,65 @@ export default function SettingsPage() {
                   Click <em>Edit profile</em> to change your details.
                 </p>
               )}
+            </section>
+
+            {/* ── Cycle ────────────────────────────────────────────────── */}
+            <section className="card" id="cycle" style={{ padding: 28 }}>
+              <h3 className="font-display" style={{ fontSize: 22, fontWeight: 400, margin: 0 }}>Cycle</h3>
+              <p style={{ color: 'var(--nova-muted)', fontSize: 13, margin: '6px 0 22px' }}>Tell Novana when your last period started and how long your cycle runs — the cycle page will update automatically.</p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+                  <span style={{ fontSize: 12, color: 'var(--nova-muted)', letterSpacing: '0.04em' }}>When did your last period start?</span>
+                  <input
+                    type="date"
+                    value={periodStartDate}
+                    onChange={e => setPeriodStartDate(e.target.value)}
+                    className="form-input"
+                    max={new Date().toLocaleDateString('en-CA')}
+                    style={{ maxWidth: 260 }}
+                  />
+                  <span style={{ fontSize: 11, color: 'var(--nova-muted)' }}>
+                    {periodStartDate
+                      ? `That was ${Math.floor((Date.now() - new Date(periodStartDate + 'T00:00:00').getTime()) / 86400000)} days ago`
+                      : 'This is used to calculate your current cycle day'}
+                  </span>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{ fontSize: 12, color: 'var(--nova-muted)', letterSpacing: '0.04em' }}>Average cycle length (days)</span>
+                  <input
+                    type="number"
+                    value={cycleLength}
+                    onChange={e => setCycleLength(parseInt(e.target.value) || 28)}
+                    className="form-input"
+                    min={21} max={45}
+                  />
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{ fontSize: 12, color: 'var(--nova-muted)', letterSpacing: '0.04em' }}>Average period length (days)</span>
+                  <input
+                    type="number"
+                    value={periodLength}
+                    onChange={e => setPeriodLength(parseInt(e.target.value) || 5)}
+                    className="form-input"
+                    min={2} max={10}
+                  />
+                </label>
+              </div>
+
+              <div style={{ marginTop: 22 }}>
+                <button
+                  onClick={saveCycle}
+                  disabled={savingCycle}
+                  className="btn-primary"
+                  style={{ fontSize: 13 }}
+                >
+                  {savingCycle ? 'Saving…' : 'Save cycle settings'}
+                </button>
+              </div>
+              <p style={{ marginTop: 12, fontSize: 12, color: 'var(--nova-muted)' }}>
+                If you log your period in the daily symptom log, Novana will also update this automatically.
+              </p>
             </section>
 
             {/* ── Privacy ──────────────────────────────────────────────── */}

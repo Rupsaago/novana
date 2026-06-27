@@ -19,7 +19,7 @@ function getGreeting() {
 }
 
 function getDayLabel() {
-  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 const MOODS = [
@@ -41,8 +41,15 @@ export default function DashboardPage() {
   const [selectedMood, setSelectedMood] = useState(7)
   const [showDetail, setShowDetail]   = useState(false)
   const [saved, setSaved]             = useState(false)
-  const [skipped, setSkipped]         = useState(false)
+  const [saving, setSaving]           = useState(false)
+  const [savingYesterday, setSavingYesterday] = useState(false)
+  const [skippedToday, setSkippedToday] = useState(false)
   const [lastSaved, setLastSaved]     = useState(0)
+  const [dayLabel, setDayLabel]       = useState('')
+  const [copiedFrom, setCopiedFrom]   = useState<string | null>(null)
+
+  // Client-only: set date label after mount to avoid SSR/UTC mismatch
+  useEffect(() => { setDayLabel(getDayLabel()) }, [])
 
   useEffect(() => {
     async function load() {
@@ -86,6 +93,15 @@ export default function DashboardPage() {
           ...r,
           date: new Date(r.logged_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         })))
+        // Pre-select today's logged mood if it exists
+        const todayStr = new Date().toLocaleDateString('en-CA')
+        const todayEntry = recent.find((r) => r.logged_at === todayStr)
+        if (todayEntry) {
+          const m = todayEntry.mood as number
+          setSelectedMood(m <= 2 ? 1 : m <= 4 ? 3 : m <= 6 ? 5 : m <= 8 ? 7 : 9)
+        }
+        // Check skip flag
+        if (localStorage.getItem(`novana_skipped_${todayStr}`)) setSkippedToday(true)
       }
 
       const { data: sd } = await supabase
@@ -107,13 +123,87 @@ export default function DashboardPage() {
     load()
   }, [lastSaved])
 
-  function handleSave() {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2200)
+  async function handleSaveToday() {
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const todayStr = new Date().toLocaleDateString('en-CA')
+      await supabase.from('symptoms').upsert({
+        user_id:       session.user.id,
+        logged_at:     todayStr,
+        mood:          selectedMood,
+        fatigue:       5,
+        sleep_hours:   7,
+        stress:        5,
+        acne:          5,
+        cramps:        5,
+        exercise_mins: 0,
+        cycle_status:  'none',
+      }, { onConflict: 'user_id,logged_at' })
+      setSaved(true)
+      setLastSaved((n) => n + 1)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (e) { console.error('[Dashboard] save failed', e) }
+    setSaving(false)
+  }
+
+  async function handleSameAsYesterday() {
+    setSavingYesterday(true)
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const todayStr = new Date().toLocaleDateString('en-CA')
+      // Fetch the most recent entry (not strictly yesterday — any previous day)
+      const { data: entries } = await supabase
+        .from('symptoms').select('*').eq('user_id', session.user.id)
+        .lt('logged_at', todayStr).order('logged_at', { ascending: false }).limit(1)
+      const y = entries?.[0]
+      if (y) {
+        await supabase.from('symptoms').upsert({
+          user_id: y.user_id, logged_at: todayStr,
+          mood: y.mood, fatigue: y.fatigue, sleep_hours: y.sleep_hours, stress: y.stress,
+          acne: y.acne, cramps: y.cramps, exercise_mins: y.exercise_mins,
+          cycle_status: y.cycle_status, notes: y.notes,
+        }, { onConflict: 'user_id,logged_at' })
+        const m = y.mood as number
+        setSelectedMood(m <= 2 ? 1 : m <= 4 ? 3 : m <= 6 ? 5 : m <= 8 ? 7 : 9)
+        // Show confirmation with the source date
+        const sourceDate = new Date(y.logged_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        setCopiedFrom(sourceDate)
+        setTimeout(() => setCopiedFrom(null), 3000)
+        setLastSaved((n) => n + 1)
+      } else {
+        // No prior entry — fall back to saving current mood selection
+        await handleSaveToday()
+      }
+    } catch (e) { console.error('[Dashboard] same as yesterday failed', e) }
+    setSavingYesterday(false)
+  }
+
+  async function handleSkipToday() {
+    const todayStr = new Date().toLocaleDateString('en-CA')
+    localStorage.setItem(`novana_skipped_${todayStr}`, '1')
+    setSkippedToday(true)
+    // Save a minimal "skipped" entry so the day still counts in the streak
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      await supabase.from('symptoms').upsert({
+        user_id: session.user.id, logged_at: todayStr,
+        mood: 5, fatigue: 5, sleep_hours: 7, stress: 5,
+        acne: 5, cramps: 5, exercise_mins: 0, cycle_status: 'none',
+        notes: 'skipped',
+      }, { onConflict: 'user_id,logged_at' })
+      setLastSaved((n) => n + 1)
+    } catch (e) { console.error('[Dashboard] skip save failed', e) }
   }
 
   return (
-    <div className="min-h-screen -mx-5 -mt-6 md:-mx-7 md:-mt-7">
+    <div className="min-h-screen -mx-5 -mt-2 md:-mx-7 md:-mt-3">
 
       {/* ── Greeting card ──────────────────────────────────────────────────── */}
       <div className="sunset-horizon grain relative overflow-hidden px-7 pt-8 pb-10 min-h-[200px]" style={{ marginBottom: 24 }}>
@@ -124,7 +214,7 @@ export default function DashboardPage() {
         <div className="relative z-10 grid gap-7 items-center max-w-6xl mx-auto dash-hero-grid"
              style={{ gridTemplateColumns: '1.3fr 1fr' }}>
           <div>
-            <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.75)' }}>{getDayLabel()}</div>
+            <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.75)' }}>{dayLabel}</div>
             <h1 className="mt-2.5 flex items-center gap-3 flex-wrap"
                 style={{ color: '#fff', fontSize: 'clamp(30px, 3.4vw, 44px)', fontWeight: 400, letterSpacing: '-0.02em' }}>
               {getGreeting()}, <em style={{ fontStyle: 'italic' }}>{firstName}</em>
@@ -174,8 +264,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Mood orbs */}
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', marginBottom: 18 }}>
+            {/* Mood orbs — dimmed when skipped */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', marginBottom: 18, opacity: skippedToday ? 0.35 : 1, pointerEvents: skippedToday ? 'none' : 'auto', transition: 'opacity .3s ease' }}>
               {MOODS.map((m) => (
                 <div key={m.val} onClick={() => setSelectedMood(m.val)}
                      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -200,18 +290,25 @@ export default function DashboardPage() {
 
             {/* Shortcuts */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginTop: 6 }}>
-              {[
-                { icon: '↻', label: 'Same as yesterday', onClick: handleSave },
-                { icon: '✕', label: skipped ? 'Skipped ✓' : 'Skip today', onClick: () => { setSkipped(true); setTimeout(() => setSkipped(false), 2000) } },
-              ].map((s) => (
-                <button key={s.label} onClick={s.onClick} style={{
+              {!skippedToday && (
+                <button onClick={handleSameAsYesterday} disabled={savingYesterday} style={{
+                  background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.95)',
+                  padding: '8px 14px', borderRadius: 999, fontSize: 12, color: 'var(--nova-text)',
+                  cursor: savingYesterday ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: savingYesterday ? 0.6 : 1,
+                }}>
+                  <span style={{ color: 'var(--nova-purple-dark)' }}>↻</span>
+                  {savingYesterday ? 'Copying…' : copiedFrom ? `Copied from ${copiedFrom} ✓` : 'Same as yesterday'}
+                </button>
+              )}
+              {!skippedToday && (
+                <button onClick={handleSkipToday} style={{
                   background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.95)',
                   padding: '8px 14px', borderRadius: 999, fontSize: 12, color: 'var(--nova-text)',
                   cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
                 }}>
-                  <span style={{ color: 'var(--nova-purple-dark)' }}>{s.icon}</span> {s.label}
+                  <span style={{ color: 'var(--nova-purple-dark)' }}>✕</span> Skip today
                 </button>
-              ))}
+              )}
               <Link href="/today" style={{
                 background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.95)',
                 padding: '8px 14px', borderRadius: 999, fontSize: 12, color: 'var(--nova-text)',
@@ -221,15 +318,25 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {/* Save + toggle */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-              <button onClick={handleSave} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: 14 }}>
-                {saved ? '✓ Saved' : 'Save today'}
-              </button>
-              <button onClick={() => setShowDetail(!showDetail)} className="btn-soft" style={{ whiteSpace: 'nowrap' }}>
-                {showDetail ? 'Hide details ↑' : 'Add more details →'}
-              </button>
-            </div>
+            {/* Skipped banner OR save row */}
+            {skippedToday ? (
+              <div style={{ marginTop: 18, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 18 }}>✓</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--nova-text)' }}>Today is marked as skipped.</div>
+                  <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginTop: 2 }}>Your streak is protected. See you tomorrow.</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                <button onClick={handleSaveToday} disabled={saving} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: 14, opacity: saving ? 0.7 : 1 }}>
+                  {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save today'}
+                </button>
+                <button onClick={() => setShowDetail(!showDetail)} className="btn-soft" style={{ whiteSpace: 'nowrap' }}>
+                  {showDetail ? 'Hide details ↑' : 'Add more details →'}
+                </button>
+              </div>
+            )}
 
             {/* Collapsible detail log */}
             {showDetail && (
@@ -443,15 +550,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 1060px) {
-          .dash-layout, .dash-main-grid { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 640px) {
-          .dash-hero-grid { grid-template-columns: 1fr !important; }
-          .dash-hero-grid > div:last-child { display: none; }
-        }
-      `}</style>
     </div>
   )
 }

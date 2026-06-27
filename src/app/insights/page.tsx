@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -83,6 +83,32 @@ export default function InsightsPage() {
   const [error, setError]       = useState<string | null>(null)
   const [notEnoughData, setNotEnoughData] = useState(false)
   const [daysLogged, setDaysLogged] = useState(0)
+  const [journalSummary, setJournalSummary] = useState<string | null>(null)
+  const [loadingSummary, setLoadingSummary] = useState(false)
+
+  useEffect(() => {
+    // Auto-load journal summary on mount
+    handleRegenerateSummary()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function handleRegenerateSummary() {
+    if (loadingSummary) return
+    setLoadingSummary(true)
+    try {
+      const journalRes = await fetch('/api/journal')
+      const journalData = await journalRes.json()
+      if (!journalData.data?.length || journalData.data.length < 2) { setLoadingSummary(false); return }
+      const combined = journalData.data.slice(0, 7).map((e: { content: string }) => e.content).join('\n\n---\n\n')
+      const res = await fetch('/api/journal', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'summarise', content: combined }),
+      })
+      const json = await res.json()
+      if (json.summary) setJournalSummary(json.summary)
+    } catch {}
+    setLoadingSummary(false)
+  }
 
   async function handleAnalyse() {
     setLoading(true); setError(null); setResult(null); setNotEnoughData(false)
@@ -282,16 +308,26 @@ export default function InsightsPage() {
                 <h3 className="font-display" style={{ fontSize: 24, fontWeight: 400, margin: 0 }}>A quiet week of rest and small clarity.</h3>
                 <div style={{ fontSize: 12, color: 'var(--nova-muted)', marginTop: 4 }}>Generated Sunday · from 6 entries</div>
               </div>
-              <button onClick={handleAnalyse} disabled={loading} className="btn-soft" style={{ fontSize: 13 }}>Regenerate</button>
+              <button onClick={handleRegenerateSummary} disabled={loadingSummary} className="btn-soft" style={{ fontSize: 13 }}>
+                {loadingSummary ? 'Reading…' : 'Regenerate'}
+              </button>
             </div>
           </div>
           <div style={{ padding: 24 }}>
-            <p style={{ fontSize: 14, lineHeight: 1.7, margin: '0 0 14px' }}>
-              This week, your writing leaned soft — themes of <em style={{ fontStyle: 'italic' }}>rest, family meals, and slow Sunday evenings</em> recurred across your entries. Words tagged <em style={{ fontStyle: 'italic' }}>anxious</em> appeared on the two days following late nights; <em style={{ fontStyle: 'italic' }}>peaceful</em> showed up after walks.
-            </p>
-            <p style={{ fontSize: 14, lineHeight: 1.7, margin: '0 0 14px' }}>
-              Notice: your most settled entries followed mornings where you logged sleep above 7 hours.
-            </p>
+            {loadingSummary ? (
+              <p style={{ fontSize: 14, color: 'var(--nova-muted)', lineHeight: 1.7 }}>Novana is reading your recent journal entries…</p>
+            ) : journalSummary ? (
+              <p style={{ fontSize: 14, lineHeight: 1.7, margin: '0 0 14px' }}>{journalSummary}</p>
+            ) : (
+              <>
+                <p style={{ fontSize: 14, lineHeight: 1.7, margin: '0 0 14px' }}>
+                  This week, your writing leaned soft — themes of <em style={{ fontStyle: 'italic' }}>rest, family meals, and slow Sunday evenings</em> recurred across your entries.
+                </p>
+                <p style={{ fontSize: 14, color: 'var(--nova-muted)', lineHeight: 1.7, margin: '0 0 14px' }}>
+                  Add a couple of journal entries and hit Regenerate to see your personal summary here.
+                </p>
+              </>
+            )}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {[['peaceful · 4','default'],['tired · 3','peach'],['anxious · 2','rose'],['grateful · 3','sky'],['hopeful · 2','default']].map(([t,v]) => (
                 <span key={t} className={`chip${v !== 'default' ? ` ${v}` : ''}`}><i className="dot" style={{ background: v === 'peach' ? 'var(--nova-peach)' : v === 'rose' ? 'var(--nova-rose)' : v === 'sky' ? '#8FA7C6' : 'var(--nova-purple)' }} /> {t}</span>
