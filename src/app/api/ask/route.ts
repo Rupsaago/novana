@@ -2,18 +2,14 @@ import { NextRequest, NextResponse }             from 'next/server'
 import { createServerClientInstance, getSession } from '@/lib/supabase-server'
 import { openai }                                 from '@/lib/openai'
 
-const SYSTEM_PROMPT = `You are Novana, a warm and knowledgeable wellness companion for people managing PCOS/PMOS (Polycystic/Polyendocrine Metabolic Ovarian Syndrome) and hormonal health conditions.
-
-You have access to the user's recent symptom tracking data (provided as context). Use it to give personalized, grounded answers.
-
-Rules you must always follow:
-1. Never diagnose. Never say "you have X condition."
-2. Use gentle, observational language: "based on your patterns", "it looks like", "you may notice"
-3. Be warm — like a knowledgeable friend, not a clinical report
-4. Keep responses to 2–3 paragraphs max
-5. If you reference their data, be specific but gentle
-6. End with a brief "Not medical advice" note
-7. Never suggest stopping medications or overriding doctor advice`
+function calcCycleDay(periodStartDate: string, cycleLength: number): { day: number; phase: string } {
+  const start = new Date(periodStartDate + 'T00:00:00')
+  const now   = new Date(); now.setHours(0, 0, 0, 0)
+  const daysSince = Math.floor((now.getTime() - start.getTime()) / 86400000)
+  const day   = Math.max(1, (daysSince % cycleLength) + 1)
+  const phase = day <= 5 ? 'Menstrual' : day <= 13 ? 'Follicular' : day <= 16 ? 'Ovulatory' : 'Luteal'
+  return { day, phase }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,34 +20,70 @@ export async function POST(req: NextRequest) {
     if (!message?.trim()) return NextResponse.json({ error: 'Message required.' }, { status: 400 })
 
     const supabase = createServerClientInstance()
-    const since = new Date()
-    since.setDate(since.getDate() - 7)
-    const { data: recent } = await supabase
-      .from('symptoms')
-      .select('logged_at, mood, fatigue, stress, sleep_hours, cycle_status, exercise_mins, notes')
-      .eq('user_id', session.user.id)
-      .gte('logged_at', since.toISOString().split('T')[0])
-      .order('logged_at', { ascending: false })
-      .limit(7)
 
-    const contextStr = recent?.length
-      ? `User's recent tracking (last 7 days):\n${recent.map(r =>
-          `${r.logged_at}: mood ${r.mood}/10, fatigue ${r.fatigue}/10, stress ${r.stress}/10, sleep ${r.sleep_hours}h, exercise ${r.exercise_mins}min, cycle: ${r.cycle_status}${r.notes ? `, note: ${r.notes}` : ''}`
+    // Fetch profile (cycle start + length) and recent symptoms in parallel
+    const [{ data: profile }, { data: recent }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('period_start_date, cycle_length')
+        .eq('id', session.user.id)
+        .single(),
+      supabase
+        .from('symptoms')
+        .select('logged_at, mood, fatigue, stress, sleep_hours, cycle_status, exercise_mins, notes')
+        .eq('user_id', session.user.id)
+        .gte('logged_at', (() => {
+          const d = new Date(); d.setDate(d.getDate() - 7)
+          return d.toLocaleDateString('en-CA')
+        })())
+        .order('logged_at', { ascending: false })
+        .limit(7),
+    ])
+
+    // Build cycle context line
+    const cycleLen = profile?.cycle_length ?? 28
+    let cycleContext = 'Cycle: not set up yet'
+    if (profile?.period_start_date) {
+      const { day, phase } = calcCycleDay(profile.period_start_date as string, cycleLen)
+      const startFmt = new Date(profile.period_start_date + 'T00:00:00')
+        .toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+      cycleContext = `Current cycle: Day ${day} of ${cycleLen}, ${phase} phase (period started ${startFmt})`
+    }
+
+    // Build symptom context
+    const symptomContext = recent?.length
+      ? `Recent tracking (last 7 days, newest first):\n${recent.map(r =>
+          `${r.logged_at}: mood ${r.mood}/10, fatigue ${r.fatigue}/10, stress ${r.stress}/10, sleep ${r.sleep_hours}h, movement ${r.exercise_mins}min, period flow: ${r.cycle_status}${r.notes ? `, note: "${r.notes}"` : ''}`
         ).join('\n')}`
-      : 'No recent tracking data available yet.'
+      : 'Symptom tracking: no data logged yet'
+
+    const systemPrompt = `You are Novana — a warm, direct AI companion for people with PMOS. You speak like a thoughtful friend who deeply understands hormonal health, never like a doctor or medical website.
+
+${cycleContext}
+${symptomContext}
+
+Rules:
+- Keep responses to 2–4 sentences maximum. Short is kind.
+- Never say "hormonal fluctuations", "it is important to", "I recommend", or any clinical phrase
+- Never suggest seeing a doctor unless the user explicitly asks
+- Use the user's real data to give specific, personal observations — not generic advice
+- Speak warmly and directly, like a text from a knowledgeable friend
+- End with a gentle observation or soft question (never a disclaimer)
+- Only disclaimer allowed: one small line "Educational only — not medical advice" at the very end
+- If you don't have enough data to answer, say so honestly and warmly`
 
     const completion = await openai.chat.completions.create({
       model:       'gpt-4o-mini',
-      temperature: 0.72,
-      max_tokens:  500,
+      temperature: 0.7,
+      max_tokens:  220,
       messages: [
-        { role: 'system', content: `${SYSTEM_PROMPT}\n\n${contextStr}` },
+        { role: 'system', content: systemPrompt },
         { role: 'user',   content: message },
       ],
     })
 
     const reply = completion.choices[0]?.message?.content
-      ?? "I had trouble thinking that through. Try again in a moment?"
+      ?? "I had trouble thinking that through just now — try again in a moment?"
 
     return NextResponse.json({ reply })
 
